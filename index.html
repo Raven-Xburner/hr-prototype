@@ -15,7 +15,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC"
 .nav-item:hover { background:#334155; color:#e2e8f0; }
 .nav-item.active { background:#334155; color:#fff; border-left-color:#3b82f6; }
 .nav-item svg { width:16px; height:16px; flex-shrink:0; }
-.main { margin-left:220px; padding:24px; min-height:100vh; }
+.main { margin-left:220px; margin-right:320px; padding:24px; min-height:100vh; transition:margin-right .3s; }
+.main.full-width { margin-right:0; }
+.prd-panel { width:320px; position:fixed; right:0; top:0; height:100vh; background:#fffbeb; border-left:1px solid #fde68a; overflow-y:auto; padding:16px; z-index:40; transition:transform .3s; }
+.prd-panel.hidden { transform:translateX(100%); }
+.prd-panel-title { font-size:14px; font-weight:600; color:#92400e; margin-bottom:12px; display:flex; align-items:center; gap:6px; position:sticky; top:0; background:#fffbeb; padding:8px 0; z-index:1; }
+.prd-panel-title svg { width:16px; height:16px; }
+.prd-note { background:#fff; border:1px solid #fde68a; border-radius:8px; padding:12px; margin-bottom:10px; font-size:12px; line-height:1.7; color:#374151; }
+.prd-note-title { font-size:12px; font-weight:600; color:#b45309; margin-bottom:6px; display:flex; align-items:center; gap:4px; }
+.prd-note-title::before { content:''; display:inline-block; width:3px; height:12px; background:#f59e0b; border-radius:2px; }
+.prd-note ul { padding-left:14px; margin:4px 0; }
+.prd-note li { margin-bottom:3px; }
+.prd-note .highlight { background:#fef3c7; padding:1px 4px; border-radius:3px; font-weight:500; }
+.prd-note .flow { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:4px; padding:6px 8px; margin:6px 0; font-size:11px; color:#166534; }
+.prd-toggle { position:fixed; right:320px; top:12px; z-index:45; width:32px; height:32px; background:#f59e0b; color:#fff; border:none; border-radius:6px 0 0 6px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:right .3s; box-shadow:-2px 0 8px rgba(0,0,0,.1); }
+.prd-toggle.expanded { right:0; border-radius:6px; }
 .page-header { margin-bottom:20px; }
 .page-header h2 { font-size:20px; font-weight:600; color:#111827; }
 .page-header p { font-size:13px; color:#6b7280; margin-top:4px; }
@@ -134,6 +148,15 @@ tr:hover td { background:#f9fafb; }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<button class="prd-toggle" id="prdToggle" onclick="togglePrdPanel()" title="PRD批注">批</button>
+<div class="prd-panel" id="prdPanel">
+  <div class="prd-panel-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    PRD 需求批注
+  </div>
+  <div id="prdNotes"></div>
+</div>
 
 <script>
 // ===== Mock Data =====
@@ -270,6 +293,7 @@ function switchPage(page){
     el.classList.toggle('active', el.dataset.page===page);
   });
   renderPage();
+  renderPrdNotes();
 }
 
 function renderPage(){
@@ -285,6 +309,75 @@ function renderPage(){
     case 'archive': main.innerHTML = renderArchive(); break;
   }
 }
+
+function togglePrdPanel(){
+  const panel = document.getElementById('prdPanel');
+  const btn = document.getElementById('prdToggle');
+  const main = document.querySelector('.main');
+  panel.classList.toggle('hidden');
+  btn.classList.toggle('expanded');
+  main.classList.toggle('full-width');
+}
+
+function renderPrdNotes(){
+  const el = document.getElementById('prdNotes');
+  el.innerHTML = prdAnnotations[currentPage] || '';
+}
+
+const prdAnnotations = {
+onboard: `
+<div class="prd-note"><div class="prd-note-title">模块定位</div>人事管理是系统数据核心，所有员工全生命周期信息均在此维护。人事管理是<span class="highlight">唯一数据写入源</span>，其他模块只读。</div>
+<div class="prd-note"><div class="prd-note-title">外部系统集成</div><ul><li><b>OA系统</b>：接收入职审批通过回调（REST API / Webhook）</li><li><b>法大大电子签</b>：发起合同签署、查询签署状态</li><li><b>短信/邮件服务</b>：向新员工发送填写链接通知</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">业务流程</div><div class="flow">招聘到岗单完成 → 自动生成待入职记录 → HR发起办理 → 员工在线填写 → 电子签合同 → HR审核归档 → 自动创建系统账号</div></div>
+<div class="prd-note"><div class="prd-note-title">状态流转</div><ul><li>系统自动创建 → <span class="highlight">待办理</span></li><li>HR点击办理 → <span class="highlight">办理中</span></li><li>员工填写完成 → <span class="highlight">审核中</span></li><li>HR审核通过 → <span class="highlight">已归档</span>（自动创建账号）</li><li>手动录入 → 直接归档</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">列表页规则</div><ul><li>展示字段：姓名、部门、岗位、入职日期、身份证号、手机号、状态</li><li>筛选：姓名模糊搜索、部门、入职日期范围、状态</li><li>分页展示</li><li>操作按钮：入职办理（待办理）、审核（审核中）</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">必填字段（入职登记）</div><ul><li><b>基本信息</b>：姓名、身份证号、性别、出生日期、身份证有效期、政治面貌</li><li><b>联系方式</b>：QQ、微信、手机号、私人邮箱、通讯地址、紧急联系人</li><li><b>学历背景</b>：学历、院校、专业、毕业时间、教育形式（新增行功能）</li><li><b>银行卡</b>：开户银行、银行账号、省市</li><li><b>入职信息</b>：入职日期、试用期、岗位、部门</li><li><b>合同信息</b>：用工类型、合同期限、合同开始日</li><li><b>附件</b>：身份证正反面、学历证书、离职证明、体检报告、近照</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">交互规则</div><ul><li>输入身份证号后<span class="highlight">自动带出</span>性别、出生日期</li><li>员工通过Token链接填写，无需登录</li><li>归档后自动创建账号（工号/手机号），发送初始密码</li></ul></div>`,
+
+confirm: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>管理试用期员工转正全流程，包含自动预警、员工申请、上级考核、HR审批环节。</div>
+<div class="prd-note"><div class="prd-note-title">业务流程</div><div class="flow">试用期到期前7天自动预警 → 员工提交转正申请 → 直属上级考核评估 → HRD审批 → 更新员工状态</div></div>
+<div class="prd-note"><div class="prd-note-title">各环节说明</div><ul><li><b>自动预警</b>：到期前7天向员工+直属上级发送提醒，HR待办生成记录</li><li><b>发起申请</b>：员工在"我的绩效"或"我的日程"中提交（工作总结、自评分）</li><li><b>上级考核</b>：填写工作表现、价值观符合度、是否建议转正、评语</li><li><b>HR审批</b>：HRD审批通过后更新为"正式员工"，试用期薪资→正式薪资</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">不通过处理</div><ul><li>可<span class="highlight">延长试用期</span>（最多延长1次，不超过3个月）</li><li>或直接辞退</li><li>均需记录原因</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">数据规则</div><ul><li>转正日期 = 入职日期 + 试用期月数</li><li>延长试用期不超过3个月</li><li>所有操作记录变更日志</li></ul></div>`,
+
+transfer: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>员工部门/岗位调动管理，支持员工本人、HR、项目经理代发起。</div>
+<div class="prd-note"><div class="prd-note-title">审批流程</div><div class="flow">员工/HR发起 → 原部门负责人 → 新部门负责人 → HR确认 → 生效后自动更新档案</div></div>
+<div class="prd-note"><div class="prd-note-title">关键字段</div><ul><li><b>调动申请人</b>：员工本人/HR/项目经理</li><li><b>调动类型</b>：平调/晋升/降职/跨事业部调动</li><li><b>新部门/岗位</b>：关联部门树和岗位库</li><li><b>生效日期</b>：调动正式生效时间</li><li><b>薪资变动</b>：若有调整需填写新薪资方案（触发薪酬变更记录）</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">审批状态</div><ul><li>待审批 → 审批中 → 已通过/已驳回</li><li>通过后<span class="highlight">自动更新</span>档案部门/岗位字段</li><li>调动历史记录可追溯</li></ul></div>`,
+
+renew: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>合同到期前<span class="highlight">30天</span>系统自动预警，HR可发起续签流程。</div>
+<div class="prd-note"><div class="prd-note-title">关键字段</div><ul><li><b>员工姓名/工号</b>：关联员工档案</li><li><b>合同编号</b>：原合同编号</li><li><b>合同类型</b>：固定期限/无固定期限/实习协议</li><li><b>原合同到期日</b>：读取合同表</li><li><b>续签年限</b>：1年/2年/3年/5年/无固定期限</li><li><b>续签次数</b>：自动统计历史续签次数</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">业务规则</div><ul><li>连续签满<span class="highlight">2次固定期限</span>，可协商无固定期限合同</li><li>续签次数由系统自动统计</li><li>到期前30天自动触发预警</li></ul></div>`,
+
+resign: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>员工离职全流程管理，支持员工自行提交或HR代提交。</div>
+<div class="prd-note"><div class="prd-note-title">业务流程</div><div class="flow">离职申请 → 直属上级审批 → 部门负责人审批 → 工作交接 → 离职面谈 → 离职生效（停用账号）</div></div>
+<div class="prd-note"><div class="prd-note-title">各环节说明</div><ul><li><b>离职申请</b>：填写离职原因、申请离职日期、最后工作日</li><li><b>工作交接</b>：生成交接清单（项目、文件、账号、实物），逐项确认</li><li><b>离职面谈</b>：员工关系专员填写（离职原因选项+文本、真实原因、是否可挽留、改进建议）</li><li><b>离职生效</b>：最后工作日到达后停用账号、更新档案为"已离职"、考勤停止</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">离职分析报表</div>按部门/原因/司龄汇总离职数据，支持挽留转化率统计。</div>
+<div class="prd-note"><div class="prd-note-title">数据保护</div>员工账号停用后，其历史数据（档案、考勤、薪酬、绩效）均<span class="highlight">只读保留，不可删除</span>。</div>`,
+
+reward: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>记录员工奖励与惩罚信息，支持关联绩效、上传红头文件附件。</div>
+<div class="prd-note"><div class="prd-note-title">关键字段</div><ul><li><b>奖惩类型</b>：奖励/惩罚</li><li><b>等级</b>：公司级/事业部级/部门级</li><li><b>奖惩主题</b>：简要标题</li><li><b>原因</b>：详细说明</li><li><b>金额</b>：奖励或处罚金额（元），0为无金额</li><li><b>生效日期</b>：奖惩正式生效时间</li><li><b>批准人</b>：最终批准的管理层</li><li><b>红头文件附件</b>：上传扫描件或电子文档</li><li><b>关联绩效</b>：是否影响当期绩效（若影响，触发绩效分数更新）</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">业务规则</div><ul><li>关联绩效设为"是"时，<span class="highlight">触发绩效分数更新</span></li><li>红头文件为必传附件（公司级/事业部级）</li><li>金额字段0表示无金额奖惩</li></ul></div>`,
+
+tag: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>支持自定义标签、批量或单个为员工打标签，标签信息回流至员工档案，用于<span class="highlight">人才看板筛选</span>。</div>
+<div class="prd-note"><div class="prd-note-title">标签类型</div><ul><li><b>人才分层</b>：核心人才、潜力之星、待观察（手动打标）</li><li><b>学历认证</b>：一学985、一学211、一学一本（规则自动打标）</li><li><b>特殊人群</b>：退役军人、残疾人、外籍人员（手动打标）</li><li><b>项目状态</b>：外派、驻场、兼职（手动打标）</li><li><b>自定义标签</b>：按业务需要自行创建（手动或规则）</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">打标方式</div><ul><li><b>手动打标</b>：HR/管理层在员工档案或批量操作中手动分配</li><li><b>规则自动</b>：系统根据学历字段自动判断并打标（如院校标识=985→自动打"一学985"标签）</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">数据流向</div>标签信息<span class="highlight">回流至员工档案</span>，在人才看板中作为筛选条件使用。</div>`,
+
+archive: `
+<div class="prd-note"><div class="prd-note-title">模块说明</div>展示员工完整信息，支持修改、历史版本追溯、附件管理和敏感字段脱敏。</div>
+<div class="prd-note"><div class="prd-note-title">展示结构（Tab页）</div>个人基本信息 | 学历背景 | 工作经历 | 家庭信息 | 入职组织 | 岗位合同 | 考勤信息 | 薪酬记录 | 绩效历史 | 奖惩记录 | 培训记录 | 附件材料 | 变更日志</div>
+<div class="prd-note"><div class="prd-note-title">版本控制</div>每次修改均记录变更日志（修改人、时间、变更字段前后值），支持查看历史版本。</div>
+<div class="prd-note"><div class="prd-note-title">敏感字段脱敏规则</div><ul><li>身份证号：显示<span class="highlight">前3后4</span></li><li>手机号：显示<span class="highlight">前3后4</span></li><li>银行卡号：显示<span class="highlight">后4位</span></li><li>薪酬金额：仅HR薪酬专员及以上可见完整数值</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">岗位序列规则</div><ul><li>职位类别：F职能/P产品/T技术/S销售/C客服运营</li><li>职级：董事长→CEO→VP→总监→经理→普员</li><li>层级：初级1/中级2/高级3/资深4/专家5</li><li>层次：基础级1/专业级2/优秀级3</li><li>职级代码由职位类别+职级+层级+层次自动生成</li></ul></div>
+<div class="prd-note"><div class="prd-note-title">薪酬结构</div><ul><li>基本工资：固定3000元</li><li>绩效工资：月总工资×30%（支持调整）</li><li>岗位工资：（月总-基本-绩效）×30%（负数默认0）</li><li>服务补贴：（月总-基本-绩效）×70%（负数默认0）</li></ul></div>`
+};
 
 // ===== Onboard Module =====
 function renderOnboard(){
@@ -648,6 +741,7 @@ function getArchiveTabContent(tab, r){
 
 // ===== Init =====
 renderPage();
+renderPrdNotes();
 </script>
 </body>
 </html>
