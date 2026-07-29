@@ -106,6 +106,19 @@ tr:hover { background: #f8fafc; }
 .op-link { color: #3b82f6; cursor: pointer; font-size: 12px; margin-right: 8px; }
 .op-link:hover { text-decoration: underline; }
 .op-link.danger { color: #ef4444; }
+.op-link.disabled { color: #c0c4cc; cursor: not-allowed; pointer-events: none; }
+.op-link.danger.disabled { color: #d4a0a0; }
+.confirm-box { text-align: center; padding: 20px 0; }
+.confirm-box .confirm-icon { font-size: 40px; margin-bottom: 12px; }
+.confirm-box .confirm-msg { font-size: 15px; color: #374151; margin-bottom: 8px; line-height: 1.6; }
+.confirm-box .confirm-sub { font-size: 13px; color: #9ca3af; margin-bottom: 20px; }
+.confirm-btns { display: flex; justify-content: center; gap: 12px; }
+.confirm-btns .btn-cancel { background: #fff; color: #374151; border: 1px solid #d1d5db; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.confirm-btns .btn-confirm { background: #3b82f6; color: #fff; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.confirm-btns .btn-confirm-danger { background: #ef4444; color: #fff; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.link-display { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px 16px; margin: 12px 0; display: flex; align-items: center; gap: 10px; }
+.link-display input { flex: 1; border: none; background: transparent; font-size: 13px; color: #0369a1; outline: none; }
+.link-display .copy-btn { background: #0ea5e9; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -337,12 +350,15 @@ function renderOnboard() {
   if(onboardTab==='contract') return tabHtml + renderContractMgmt();
   var rows = getPageData(onboardData, 'onboard');
   var tableRows = rows.map(function(r) {
-    var ops = '<span class="op-link" onclick="showToast(\'查看详情\')">查看</span>';
-    if(r.status==='待办理') ops += '<span class="op-link" onclick="openOnboardForm()">办理入职</span><span class="op-link danger" onclick="showToast(\'已放弃入职\')">放弃入职</span>';
-    if(r.status==='办理中') ops += '<span class="op-link danger" onclick="showToast(\'已放弃入职\')">放弃入职</span>';
-    if(r.status==='审核中') ops += '<span class="op-link" onclick="showToast(\'审核通过\')">审核</span>';
-    if(r.status==='合同签署中') ops += '<span class="op-link" onclick="showToast(\'已重新发起签署\')">重新发起签署</span>';
-    return '<tr><td>'+r.name+'</td><td>'+r.bu+'</td><td>'+r.dept+'</td><td>'+r.pos+'</td><td>'+r.date+'</td><td>'+maskId(r.idCard)+'</td><td>'+maskPhone(r.phone)+'</td><td><span class="badge '+(r.source==='OA'?'badge-blue':'badge-gray')+'">'+r.source+'</span></td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td>'+ops+'</td></tr>';
+    var s = r.status;
+    var dead = (s==='已归档'||s==='已失效'||s==='放弃入职');
+    var ops = '<span class="op-link" onclick="openOnboardDetail('+r.id+')">查看</span>';
+    ops += '<span class="op-link'+(s==='待办理'?'':' disabled')+'" onclick="processOnboard('+r.id+')">办理入职</span>';
+    ops += '<span class="op-link'+(s==='审核中'?'':' disabled')+'" onclick="openAuditModal('+r.id+')">审核</span>';
+    ops += '<span class="op-link'+(s==='合同签署中'?'':' disabled')+'" onclick="signContract('+r.id+')">合同签署</span>';
+    ops += '<span class="op-link danger'+(dead?' disabled':'')+'" onclick="abandonOnboard('+r.id+')">放弃入职</span>';
+    ops += '<span class="op-link'+(s==='合同已完成'?'':' disabled')+'" onclick="archiveOnboard('+r.id+')">归档</span>';
+    return '<tr id="onboard-row-'+r.id+'"'+(dead?' style="opacity:.5"':'')+'><td>'+r.name+'</td><td>'+r.bu+'</td><td>'+r.dept+'</td><td>'+r.pos+'</td><td>'+r.date+'</td><td>'+maskId(r.idCard)+'</td><td>'+maskPhone(r.phone)+'</td><td><span class="badge '+(r.source==='OA'?'badge-blue':'badge-gray')+'">'+r.source+'</span></td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td style="white-space:nowrap">'+ops+'</td></tr>';
   }).join('');
   return tabHtml + '<div class="page-header"><h1 class="page-title">入职管理</h1><button class="btn-primary" onclick="openOnboardForm()">+ 手动录入</button></div>'
   + '<div class="filter-bar">'
@@ -468,6 +484,172 @@ function addWorkRow() {
 }
 function submitOnboardForm() {
   if(validateForm(document.getElementById('onboardFormEl'))) { showToast('入职信息提交成功'); closeModal(); }
+}
+
+// ---- 入职管理操作按钮交互 ----
+function findOnboard(id) { for(var i=0;i<onboardData.length;i++){ if(onboardData[i].id===id) return onboardData[i]; } return null; }
+
+function confirmAction(icon, msg, sub, confirmText, isDanger, onConfirm) {
+  var html = '<div class="confirm-box"><div class="confirm-icon">'+icon+'</div><div class="confirm-msg">'+msg+'</div><div class="confirm-sub">'+sub+'</div><div class="confirm-btns"><button class="btn-cancel" onclick="closeModal()">取消</button><button class="'+(isDanger?'btn-confirm-danger':'btn-confirm')+'" id="confirmOkBtn">'+confirmText+'</button></div></div>';
+  openModal(html);
+  document.getElementById('confirmOkBtn').onclick = function(){ closeModal(); onConfirm(); };
+}
+
+function openOnboardDetail(id) {
+  var r = findOnboard(id);
+  if(!r) return;
+  var gender = parseInt(r.idCard[16])%2===1?'男':'女';
+  var birthday = r.idCard.substring(6,10)+'-'+r.idCard.substring(10,12)+'-'+r.idCard.substring(12,14);
+  var html = '<div class="modal-title">入职详情 - '+r.name+'</div>'
+  + '<div class="form-section"><div class="form-section-title">基本信息</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">姓名</div><div class="info-value">'+r.name+'</div></div>'
+  + '<div class="info-item"><div class="info-label">性别</div><div class="info-value">'+gender+'</div></div>'
+  + '<div class="info-item"><div class="info-label">出生日期</div><div class="info-value">'+birthday+'</div></div>'
+  + '<div class="info-item"><div class="info-label">身份证号</div><div class="info-value">'+maskId(r.idCard)+'</div></div>'
+  + '<div class="info-item"><div class="info-label">手机号码</div><div class="info-value">'+maskPhone(r.phone)+'</div></div>'
+  + '<div class="info-item"><div class="info-label">政治面貌</div><div class="info-value">群众</div></div>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">入职信息</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">事业部</div><div class="info-value">'+r.bu+'</div></div>'
+  + '<div class="info-item"><div class="info-label">部门</div><div class="info-value">'+r.dept+'</div></div>'
+  + '<div class="info-item"><div class="info-label">岗位</div><div class="info-value">'+r.pos+'</div></div>'
+  + '<div class="info-item"><div class="info-label">入职日期</div><div class="info-value">'+r.date+'</div></div>'
+  + '<div class="info-item"><div class="info-label">来源</div><div class="info-value">'+r.source+'</div></div>'
+  + '<div class="info-item"><div class="info-label">当前状态</div><div class="info-value"><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></div></div>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">联系方式</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">QQ号</div><div class="info-value">'+randInt(100000000,999999999)+'</div></div>'
+  + '<div class="info-item"><div class="info-label">微信号</div><div class="info-value">wx_'+r.name+'</div></div>'
+  + '<div class="info-item"><div class="info-label">通讯地址</div><div class="info-value">广东省深圳市南山区科技园</div></div>'
+  + '<div class="info-item"><div class="info-label">紧急联系人</div><div class="info-value">'+rand(NAMES)+' (父母)</div></div>'
+  + '<div class="info-item"><div class="info-label">紧急联系电话</div><div class="info-value">'+maskPhone(genPhone())+'</div></div>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">学历背景</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">学历</div><div class="info-value">'+rand(['本科','硕士','大专'])+'</div></div>'
+  + '<div class="info-item"><div class="info-label">毕业院校</div><div class="info-value">'+rand(['武汉大学','华中科技大学','中山大学','深圳大学'])+'</div></div>'
+  + '<div class="info-item"><div class="info-label">毕业专业</div><div class="info-value">'+rand(['计算机科学','软件工程','信息管理','工商管理'])+'</div></div>'
+  + '<div class="info-item"><div class="info-label">教育形式</div><div class="info-value">全日制</div></div>'
+  + '</div></div>'
+  + '<div style="text-align:right;padding-top:12px;border-top:1px solid #e5e7eb;"><button class="btn-secondary" onclick="closeModal()">关闭</button></div>';
+  openModal(html, true);
+}
+
+function processOnboard(id) {
+  var r = findOnboard(id);
+  if(!r || r.status!=='待办理') return;
+  confirmAction('📨', '确认为「'+r.name+'」办理入职？', '系统将生成员工信息填写链接，并通过短信发送至 '+maskPhone(r.phone), '确认办理', false, function(){
+    r.status = '办理中';
+    var link = 'https://hr.richinfo.cn/onboard/fill?token=' + btoa(String(id)+Date.now()).replace(/=/g,'').substring(0,24);
+    var html = '<div class="modal-title">办理入职 - '+r.name+'</div>'
+    + '<div style="padding:12px 0;font-size:14px;color:#374151;">已生成专属填写链接，请发送给新员工完成信息填报：</div>'
+    + '<div class="link-display"><input readonly value="'+link+'" id="onboardLink"><button class="copy-btn" onclick="copyLink()">复制链接</button></div>'
+    + '<div style="font-size:12px;color:#9ca3af;margin-bottom:16px;">链接有效期7天，员工通过此链接填写个人入职信息（无需登录），填写完成后状态将自动流转为「待审核」。</div>'
+    + '<div class="warning-box">短信通知已同步发送至 '+maskPhone(r.phone)+'，请注意跟进员工填写进度。</div>'
+    + '<div style="text-align:right;padding-top:12px;border-top:1px solid #e5e7eb;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">关闭</button><button class="btn-primary" onclick="simulateFillComplete('+id+')">模拟填写完成</button></div>';
+    openModal(html);
+    renderPage();
+  });
+}
+function copyLink() {
+  var el = document.getElementById('onboardLink');
+  el.select();
+  document.execCommand('copy');
+  showToast('链接已复制到剪贴板');
+}
+function simulateFillComplete(id) {
+  var r = findOnboard(id);
+  if(r) { r.status = '审核中'; }
+  closeModal();
+  renderPage();
+  showToast('员工已完成信息填写，状态已更新为「审核中」');
+}
+
+function openAuditModal(id) {
+  var r = findOnboard(id);
+  if(!r || r.status!=='审核中') return;
+  var gender = parseInt(r.idCard[16])%2===1?'男':'女';
+  var birthday = r.idCard.substring(6,10)+'-'+r.idCard.substring(10,12)+'-'+r.idCard.substring(12,14);
+  var html = '<div class="modal-title">入职审核 - '+r.name+'</div>'
+  + '<div class="warning-box">以下为员工通过填写链接提交的入职信息，请核实后审批。</div>'
+  + '<div class="form-section"><div class="form-section-title">基本信息（员工填写）</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">姓名</div><div class="info-value">'+r.name+'</div></div>'
+  + '<div class="info-item"><div class="info-label">性别</div><div class="info-value">'+gender+'</div></div>'
+  + '<div class="info-item"><div class="info-label">出生日期</div><div class="info-value">'+birthday+'</div></div>'
+  + '<div class="info-item"><div class="info-label">身份证号</div><div class="info-value">'+maskId(r.idCard)+'</div></div>'
+  + '<div class="info-item"><div class="info-label">手机号码</div><div class="info-value">'+maskPhone(r.phone)+'</div></div>'
+  + '<div class="info-item"><div class="info-label">政治面貌</div><div class="info-value">群众</div></div>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">学历背景（员工填写）</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">学历</div><div class="info-value">'+rand(['本科','硕士'])+'</div></div>'
+  + '<div class="info-item"><div class="info-label">毕业院校</div><div class="info-value">'+rand(['武汉大学','华中科技大学','中山大学'])+'</div></div>'
+  + '<div class="info-item"><div class="info-label">毕业专业</div><div class="info-value">'+rand(['计算机科学','软件工程'])+'</div></div>'
+  + '<div class="info-item"><div class="info-label">学历证书编号</div><div class="info-value">'+randInt(1000000000,9999999999)+'</div></div>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">银行卡信息（员工填写）</div><div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">开户银行</div><div class="info-value">中国工商银行</div></div>'
+  + '<div class="info-item"><div class="info-label">银行账号</div><div class="info-value">'+maskBank('6222'+String(randInt(1000000000000,9999999999999)))+'</div></div>'
+  + '<div class="info-item"><div class="info-label">开户省市</div><div class="info-value">广东省 深圳市</div></div>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">附件材料</div><div style="display:flex;gap:12px;flex-wrap:wrap;">'
+  + '<span class="badge badge-green">身份证正反面 ✓</span><span class="badge badge-green">学历证书 ✓</span><span class="badge badge-green">离职证明 ✓</span><span class="badge badge-green">证件照 ✓</span><span class="badge badge-gray">体检报告（未上传）</span>'
+  + '</div></div>'
+  + '<div style="display:flex;justify-content:flex-end;gap:12px;padding-top:16px;border-top:1px solid #e5e7eb;">'
+  + '<button class="btn-secondary" onclick="closeModal()">关闭</button>'
+  + '<button class="btn-danger" style="padding:8px 20px;font-size:14px;" onclick="auditReject('+id+')">不通过</button>'
+  + '<button class="btn-primary" onclick="auditPass('+id+')">通过</button></div>';
+  openModal(html, true);
+}
+function auditPass(id) {
+  var r = findOnboard(id);
+  if(!r) return;
+  closeModal();
+  confirmAction('✅', '确认通过「'+r.name+'」的入职审核？', '审核通过后，将进入电子合同签署环节（法大大）。', '确认通过', false, function(){
+    r.status = '合同签署中';
+    renderPage();
+    showToast('审核已通过，已发起电子合同签署');
+  });
+}
+function auditReject(id) {
+  var r = findOnboard(id);
+  if(!r) return;
+  closeModal();
+  confirmAction('⚠️', '确认不通过「'+r.name+'」的入职审核？', '驳回后，员工需重新修改并提交入职信息。', '确认驳回', true, function(){
+    r.status = '办理中';
+    renderPage();
+    showToast('审核已驳回，已通知员工重新填写', 'error');
+  });
+}
+
+function signContract(id) {
+  var r = findOnboard(id);
+  if(!r || r.status!=='合同签署中') return;
+  confirmAction('📝', '确认为「'+r.name+'」发起电子合同签署？', '将调用法大大电子签平台，发起公司代签 + 员工手机签流程。', '发起签署', false, function(){
+    showToast('已调用法大大，合同签署流程已发起');
+    setTimeout(function(){ r.status='合同已完成'; renderPage(); showToast('合同签署已完成'); }, 1500);
+  });
+}
+
+function abandonOnboard(id) {
+  var r = findOnboard(id);
+  if(!r) return;
+  if(r.status==='已归档'||r.status==='已失效'||r.status==='放弃入职') return;
+  confirmAction('🚫', '确认放弃「'+r.name+'」的入职流程？', '放弃后该记录将标记为「放弃入职」，所有操作按钮置灰，此操作不可撤销。', '确认放弃', true, function(){
+    r.status = '放弃入职';
+    renderPage();
+    showToast('已放弃入职，记录已归档', 'error');
+  });
+}
+
+function archiveOnboard(id) {
+  var r = findOnboard(id);
+  if(!r || r.status!=='合同已完成') return;
+  var empNo = 'EMP' + String(randInt(10000,99999));
+  confirmAction('📁', '确认将「'+r.name+'」归档至员工档案库？', '归档后系统将自动生成工号 '+empNo+'，同步创建员工账号并发送初始密码短信。', '确认归档', false, function(){
+    r.status = '已归档';
+    employeeData.unshift({ id:employeeData.length+1, name:r.name, empNo:empNo, dept:r.dept, pos:r.pos, entryDate:r.date, phone:r.phone, status:'试用期', idCard:r.idCard, bank:'6222'+String(randInt(1000000000000,9999999999999)) });
+    renderPage();
+    showToast('归档成功！工号 '+empNo+' 已生成，账号信息已发送至 '+maskPhone(r.phone));
+  });
 }
 
 // ---- 2. 转正管理 ----
