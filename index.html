@@ -202,7 +202,7 @@ function genIdCard() { var area=String(randInt(110000,659999)); var y=randInt(19
 function genPhone() { return '1'+randInt(30,99)+String(randInt(10000000,99999999)); }
 
 var onboardData=[], regularData=[], transferData=[], renewData=[], resignData=[], rewardData=[], tagData=[], employeeData=[];
-var punchData=[], shiftData=[], leaveData=[], leaveBalanceData=[], dailyAttData=[], summaryData=[], correctionData=[], auditLogData=[];
+var punchData=[], shiftData=[], leaveData=[], leaveBalanceData=[], dailyAttData=[], summaryData=[], correctionData=[], auditLogData=[], specialGroupData=[];
 
 function initData() {
   var i;
@@ -243,11 +243,31 @@ function initData() {
     punchData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:pName, dept:pDept, datetime:randDate(2025,2025)+' '+String(pHour).padStart(2,'0')+':'+String(pMin).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), punchType:pType, source:rand(punchSources), location:rand(punchLocations) });
   }
   shiftData = [
-    { id:1, name:'标准班次', code:'STD01', start:'09:00', end:'18:00', flex:15, days:'周一至周五', crossDay:false, status:'启用', bindCount:186 },
-    { id:2, name:'弹性班次', code:'FLEX01', start:'09:00', end:'18:00', flex:60, days:'周一至周五', crossDay:false, status:'启用', bindCount:42 },
-    { id:3, name:'早班', code:'EAR01', start:'07:00', end:'15:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:28 },
-    { id:4, name:'中班', code:'MID01', start:'15:00', end:'23:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:25 },
-    { id:5, name:'夜班', code:'NIGHT01', start:'23:00', end:'07:00', flex:10, days:'排班制', crossDay:true, status:'停用', bindCount:12 }
+    { id:1, name:'标准班次', code:'STD01', start:'09:00', end:'18:00', flex:15, days:'周一至周五', crossDay:false, status:'启用', bindCount:186,
+      deptBindings:['技术研发部','产品设计部','市场营销部'],
+      personalBindings:[{name:'张伟',empNo:'EMP1024',effectiveDate:'2025-01-01',expireDate:'永久'},{name:'王芳',empNo:'EMP1025',effectiveDate:'2025-02-01',expireDate:'永久'},{name:'李娜',empNo:'EMP1026',effectiveDate:'2025-03-01',expireDate:'2025-12-31'}],
+      dateBindings:[{name:'陈静',empNo:'EMP1027',date:'2025-08-15',shiftName:'标准班次'},{name:'杨磊',empNo:'EMP1028',date:'2025-08-16',shiftName:'标准班次'}]
+    },
+    { id:2, name:'弹性班次', code:'FLEX01', start:'09:00', end:'18:00', flex:60, days:'周一至周五', crossDay:false, status:'启用', bindCount:42,
+      deptBindings:['数据分析部'],
+      personalBindings:[{name:'赵敏',empNo:'EMP1029',effectiveDate:'2025-01-01',expireDate:'永久'},{name:'黄强',empNo:'EMP1030',effectiveDate:'2025-04-01',expireDate:'永久'}],
+      dateBindings:[{name:'周婷',empNo:'EMP1031',date:'2025-08-20',shiftName:'弹性班次'}]
+    },
+    { id:3, name:'早班', code:'EAR01', start:'07:00', end:'15:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:28,
+      deptBindings:['客户服务部','运营管理部'],
+      personalBindings:[{name:'吴昊',empNo:'EMP1032',effectiveDate:'2025-05-01',expireDate:'2025-10-31'},{name:'徐明',empNo:'EMP1033',effectiveDate:'2025-06-01',expireDate:'永久'},{name:'孙丽',empNo:'EMP1034',effectiveDate:'2025-07-01',expireDate:'永久'},{name:'马超',empNo:'EMP1035',effectiveDate:'2025-03-01',expireDate:'永久'},{name:'朱琳',empNo:'EMP1036',effectiveDate:'2025-01-15',expireDate:'永久'},{name:'胡斌',empNo:'EMP1037',effectiveDate:'2025-02-01',expireDate:'永久'}],
+      dateBindings:[{name:'郭雪',empNo:'EMP1038',date:'2025-08-10',shiftName:'早班'},{name:'林峰',empNo:'EMP1039',date:'2025-08-11',shiftName:'早班'},{name:'何雨',empNo:'EMP1040',date:'2025-08-12',shiftName:'早班'},{name:'高翔',empNo:'EMP1041',date:'2025-08-13',shiftName:'早班'}]
+    },
+    { id:4, name:'中班', code:'MID01', start:'15:00', end:'23:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:25,
+      deptBindings:['客户服务部'],
+      personalBindings:[{name:'罗敏',empNo:'EMP1042',effectiveDate:'2025-04-01',expireDate:'永久'},{name:'张伟',empNo:'EMP1024',effectiveDate:'2025-08-01',expireDate:'2025-08-31'}],
+      dateBindings:[{name:'王芳',empNo:'EMP1025',date:'2025-08-18',shiftName:'中班'}]
+    },
+    { id:5, name:'夜班', code:'NIGHT01', start:'23:00', end:'07:00', flex:10, days:'排班制', crossDay:true, status:'停用', bindCount:12,
+      deptBindings:[],
+      personalBindings:[{name:'李娜',empNo:'EMP1026',effectiveDate:'2025-01-01',expireDate:'2025-06-30'}],
+      dateBindings:[]
+    }
   ];
   var leaveTypes = ['请假','出差','加班','补卡','外勤'];
   var holidayTypes = ['年休假','病假','事假','婚假','产假','陪产假','丧假','调休假','育儿假','工伤假'];
@@ -288,6 +308,24 @@ function initData() {
   for(i=0;i<25;i++){
     auditLogData.push({ id:i+1, opEmpNo:'EMP'+String(randInt(1000,9999)), opName:rand(NAMES), opTime:randDate(2025,2025)+' '+String(randInt(8,18)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), opType:rand(auditTypes), opTarget:rand(['打卡数据','考勤明细','月度汇总','假期额度','班次配置','修正记录']), opResult:Math.random()>0.1?'成功':'失败', ip:'10.'+randInt(0,255)+'.'+randInt(0,255)+'.'+randInt(1,254) });
   }
+  // Special groups with custom punch rules
+  var specialGroupTypes = [
+    { type:'哺乳', rule:'每日额外增加60分钟哺乳假，上班可晚到30分钟，下班可早退30分钟' },
+    { type:'孕期', rule:'孕期员工禁止安排夜班，允许弹性上下班（±1小时），每月可申请2天产检假' },
+    { type:'工伤', rule:'工伤期间免打卡，按正常出勤计算，需提供医院证明' },
+    { type:'残疾', rule:'残疾员工可申请远程办公，打卡位置放宽至5公里范围' },
+    { type:'高管', rule:'高管免固定班次考勤，按月提交工作报告即可' },
+    { type:'外派', rule:'外派员工按当地时区打卡，需绑定GPS定位验证' }
+  ];
+  for(i=0;i<12;i++){
+    var sgType = rand(specialGroupTypes);
+    var memberCount = randInt(2,8);
+    var members = [];
+    for(var j=0;j<memberCount;j++){
+      members.push({ name:rand(NAMES), empNo:'EMP'+String(randInt(1000,9999)), dept:rand(DEPTS), joinDate:randDate(2024,2025) });
+    }
+    specialGroupData.push({ id:i+1, groupName:sgType.type+'组-'+String(i+1), groupType:sgType.type, rule:sgType.rule, status:Math.random()>0.2?'启用':'停用', memberCount:memberCount, members:members, createTime:randDate(2024,2025), creator:rand(NAMES)+'(HR)' });
+  }
 }
 initData();
 
@@ -312,6 +350,7 @@ var currentAttSub = 'punch';
 var ATT_SUBS = [
   { key:'punch', name:'打卡数据' },
   { key:'shift', name:'班次管理' },
+  { key:'special', name:'特殊人群' },
   { key:'apply', name:'请假/出差/加班' },
   { key:'leave', name:'假期管理' },
   { key:'daily', name:'考勤明细' },
@@ -1148,6 +1187,7 @@ function renderAttendance() {
   switch(currentAttSub) {
     case 'punch': content = renderPunchData(); break;
     case 'shift': content = renderShiftMgmt(); break;
+    case 'special': content = renderSpecialGroup(); break;
     case 'apply': content = renderApplyMgmt(); break;
     case 'leave': content = renderLeaveMgmt(); break;
     case 'daily': content = renderDailyAtt(); break;
@@ -1182,11 +1222,17 @@ function renderPunchData() {
   var tableRows = rows.map(function(r) {
     return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.datetime+'</td><td><span class="badge '+(r.punchType==='上班'?'badge-blue':'badge-green')+'">'+r.punchType+'</span></td><td>'+r.source+'</td><td>'+r.location+'</td></tr>';
   }).join('');
+  
+  // Add empty state message when no data
+  if(punchData.length === 0) {
+    tableRows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:40px;">暂无打卡数据，请点击"手动拉取"或等待系统自动同步</td></tr>';
+  }
+  
   return '<div class="stat-cards">'
-  + '<div class="stat-card"><div class="stat-label">今日打卡人数</div><div class="stat-value">286</div><div class="stat-sub">应到 312 人</div></div>'
-  + '<div class="stat-card"><div class="stat-label">未打卡人数</div><div class="stat-value" style="color:#ef4444;">26</div><div class="stat-sub">需跟进处理</div></div>'
-  + '<div class="stat-card"><div class="stat-label">异常打卡</div><div class="stat-value" style="color:#f59e0b;">12</div><div class="stat-sub">位置/时间异常</div></div>'
-  + '<div class="stat-card"><div class="stat-label">数据源分布</div><div class="stat-value">企微APP</div><div class="stat-sub">占比 72%</div></div>'
+  + '<div class="stat-card"><div class="stat-label">今日打卡人数</div><div class="stat-value">286</div><div class="stat-sub">应到 312 人，缺勤 <span style="color:#ef4444;font-weight:600;">26</span> 人</div></div>'
+  + '<div class="stat-card"><div class="stat-label">未打卡人数</div><div class="stat-value" style="color:#ef4444;">26</div><div class="stat-sub">需跟进处理，建议发送提醒</div></div>'
+  + '<div class="stat-card"><div class="stat-label">异常打卡</div><div class="stat-value" style="color:#f59e0b;">12</div><div class="stat-sub">位置/时间异常，需人工审核</div></div>'
+  + '<div class="stat-card"><div class="stat-label">数据源分布</div><div class="stat-value">企微APP</div><div class="stat-sub">占比 72%，指纹机 18%，刷脸机 10%</div></div>'
   + '</div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>日期范围起</label><input type="date"></div>'
@@ -1208,13 +1254,40 @@ function renderShiftMgmt() {
     + '<div class="shift-meta">绑定人数: '+s.bindCount+'人</div>'
     + '<div style="display:flex;gap:8px;margin-top:4px;"><span class="op-link" onclick="openShiftDetail('+s.id+')">详情</span><span class="op-link" onclick="showToast(\'编辑班次\')">编辑</span><span class="op-link danger" onclick="showToast(\''+(s.status==='启用'?'已停用':'已启用')+'\')">'+(s.status==='启用'?'停用':'启用')+'</span></div></div>';
   }).join('');
+  
+  // Multi-shift binding table with detailed info
   var bindRows = shiftData.filter(function(s){return s.status==='启用';}).map(function(s){
-    return '<tr><td>'+s.name+'</td><td>'+s.code+'</td><td>'+s.start+'-'+s.end+'</td><td>'+s.days+'</td><td>'+s.bindCount+'人</td><td><span class="op-link" onclick="showToast(\'查看绑定\')">查看</span><span class="op-link" onclick="showToast(\'修改绑定\')">修改</span></td></tr>';
+    var deptBindings = s.deptBindings || [];
+    var personalBindings = s.personalBindings || [];
+    var dateBindings = s.dateBindings || [];
+    var totalBindings = deptBindings.length + personalBindings.length + dateBindings.length;
+    
+    var bindingInfo = '';
+    if(deptBindings.length > 0) {
+      bindingInfo += '<div style="margin-bottom:4px;"><span style="font-size:11px;color:#6b7280;">部门绑定:</span> ';
+      bindingInfo += deptBindings.map(function(d){return '<span class="badge badge-blue" style="margin-right:4px;">'+d+'</span>';}).join('');
+      bindingInfo += '</div>';
+    }
+    if(personalBindings.length > 0) {
+      bindingInfo += '<div style="margin-bottom:4px;"><span style="font-size:11px;color:#6b7280;">个人绑定:</span> ';
+      bindingInfo += personalBindings.slice(0,5).map(function(p){return '<span class="badge badge-purple" style="margin-right:4px;">'+p+'</span>';}).join('');
+      if(personalBindings.length > 5) bindingInfo += '<span style="font-size:11px;color:#9ca3af;">等'+personalBindings.length+'人</span>';
+      bindingInfo += '</div>';
+    }
+    if(dateBindings.length > 0) {
+      bindingInfo += '<div><span style="font-size:11px;color:#6b7280;">按日期绑定:</span> ';
+      bindingInfo += dateBindings.slice(0,3).map(function(d){return '<span class="badge badge-yellow" style="margin-right:4px;">'+d.date+'</span>';}).join('');
+      if(dateBindings.length > 3) bindingInfo += '<span style="font-size:11px;color:#9ca3af;">等'+dateBindings.length+'条</span>';
+      bindingInfo += '</div>';
+    }
+    
+    return '<tr><td>'+s.name+'</td><td>'+s.code+'</td><td>'+s.start+'-'+s.end+'</td><td>'+s.days+'</td><td>'+totalBindings+'人</td><td style="text-align:left;">'+bindingInfo+'<div style="margin-top:6px;"><span class="op-link" onclick="openShiftDetail('+s.id+')">查看详情</span><span class="op-link" onclick="showToast(\'修改绑定\')">修改</span></div></td></tr>';
   }).join('');
+  
   return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="font-size:16px;font-weight:600;color:#374151;">班次模板</h2><button class="btn-primary" onclick="showToast(\'新增班次\')">+ 新增班次</button></div>'
   + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px;">'+cardsHtml+'</div>'
   + '<h2 style="font-size:16px;font-weight:600;color:#374151;margin-bottom:12px;">班次绑定情况</h2>'
-  + '<div class="table-container"><table><thead><tr><th>班次名称</th><th>编码</th><th>时间</th><th>工作天数</th><th>绑定人数</th><th>操作</th></tr></thead><tbody>'+bindRows+'</tbody></table></div>';
+  + '<div class="table-container"><table><thead><tr><th>班次名称</th><th>编码</th><th>时间</th><th>工作天数</th><th>绑定人数</th><th>绑定详情</th></tr></thead><tbody>'+bindRows+'</tbody></table></div>';
 }
 
 function renderApplyMgmt() {
@@ -1250,8 +1323,22 @@ function renderLeaveMgmt() {
 function renderDailyAtt() {
   var rows = getPageData(dailyAttData, 'attendance');
   var tableRows = rows.map(function(r) {
-    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.date+'</td><td>'+r.week+'</td><td>'+r.shift+'</td><td>'+r.shouldStart+'</td><td>'+r.shouldEnd+'</td><td>'+r.actualStart+'</td><td>'+r.actualEnd+'</td><td>'+r.startSource+'</td><td>'+r.endSource+'</td><td><span class="badge '+attStatusBadge(r.attStatus)+'">'+r.attStatus+'</span></td><td>'+r.lateMin+'</td><td>'+r.earlyMin+'</td><td>'+r.workHours+'</td><td><span class="badge '+(r.dataStatus==='已修正'?'badge-yellow':'badge-gray')+'">'+r.dataStatus+'</span></td><td><span class="op-link" onclick="openCorrectionForm('+r.id+')">修正</span></td></tr>';
+    // Add visual indicators for abnormal situations
+    var startCell = r.actualStart;
+    var endCell = r.actualEnd;
+    if(r.attStatus === '迟到') startCell = '<span style="color:#f59e0b;font-weight:600;">'+r.actualStart+' <small>(迟'+r.lateMin+'min)</small></span>';
+    if(r.attStatus === '早退') endCell = '<span style="color:#ef4444;font-weight:600;">'+r.actualEnd+' <small>(早'+r.earlyMin+'min)</small></span>';
+    if(r.attStatus === '旷工') { startCell = '<span style="color:#ef4444;">--</span>'; endCell = '<span style="color:#ef4444;">--</span>'; }
+    if(r.attStatus === '请假' || r.attStatus === '出差') { startCell = '<span style="color:#9ca3af;">--</span>'; endCell = '<span style="color:#9ca3af;">--</span>'; }
+    
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.date+'</td><td>'+r.week+'</td><td>'+r.shift+'</td><td>'+r.shouldStart+'</td><td>'+r.shouldEnd+'</td><td>'+startCell+'</td><td>'+endCell+'</td><td>'+r.startSource+'</td><td>'+r.endSource+'</td><td><span class="badge '+attStatusBadge(r.attStatus)+'">'+r.attStatus+'</span></td><td>'+(r.lateMin>0?'<span style="color:#f59e0b;">'+r.lateMin+'</span>':'--')+'</td><td>'+(r.earlyMin>0?'<span style="color:#ef4444;">'+r.earlyMin+'</span>':'--')+'</td><td>'+r.workHours+'</td><td><span class="badge '+(r.dataStatus==='已修正'?'badge-yellow':'badge-gray')+'">'+r.dataStatus+'</span></td><td><span class="op-link" onclick="openCorrectionForm('+r.id+')">修正</span></td></tr>';
   }).join('');
+  
+  // Empty state
+  if(dailyAttData.length === 0) {
+    tableRows = '<tr><td colspan="18" style="text-align:center;color:#9ca3af;padding:40px;">暂无考勤明细数据，请先完成班次配置和打卡数据同步</td></tr>';
+  }
+  
   return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">考勤明细</h1><button class="btn-secondary" onclick="showToast(\'导出中...\')">导出Excel</button></div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>日期</label><input type="date"></div>'
@@ -1266,10 +1353,21 @@ function renderDailyAtt() {
 function renderAttSummary() {
   var rows = getPageData(summaryData, 'attendance');
   var tableRows = rows.map(function(r) {
-    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.month+'</td><td>'+r.shouldDays+'</td><td>'+r.actualDays+'</td><td>'+r.lateCount+'</td><td>'+r.lateMin+'</td><td>'+r.earlyCount+'</td><td>'+r.absentDays+'</td><td>'+r.leaveDays+'</td><td>'+r.travelDays+'</td><td>'+r.overtimeHours+'</td><td>'+r.correctCount+'</td><td><span class="badge '+(r.status==='已锁定'?'badge-red':r.status==='已确认'?'badge-green':'badge-gray')+'">'+r.status+'</span></td><td><span class="op-link'+(r.status!=='已锁定'?'':' disabled')+'" onclick="confirmLock('+r.id+')">确认锁定</span></td></tr>';
+    // Add visual indicators for abnormal situations
+    var lateCell = r.lateCount > 0 ? '<span style="color:#f59e0b;">'+r.lateCount+'次 ('+r.lateMin+'min)</span>' : '--';
+    var earlyCell = r.earlyCount > 0 ? '<span style="color:#ef4444;">'+r.earlyCount+'次</span>' : '--';
+    var absentCell = r.absentDays > 0 ? '<span style="color:#ef4444;font-weight:600;">'+r.absentDays+'</span>' : '--';
+    
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.month+'</td><td>'+r.shouldDays+'</td><td>'+r.actualDays+'</td><td>'+lateCell+'</td><td>'+earlyCell+'</td><td>'+absentCell+'</td><td>'+r.leaveDays+'</td><td>'+r.travelDays+'</td><td>'+r.overtimeHours+'</td><td>'+r.correctCount+'</td><td><span class="badge '+(r.status==='已锁定'?'badge-red':r.status==='已确认'?'badge-green':'badge-gray')+'">'+r.status+'</span></td><td><span class="op-link'+(r.status!=='已锁定'?'':' disabled')+'" onclick="confirmLock('+r.id+')">确认锁定</span></td></tr>';
   }).join('');
+  
+  // Empty state
+  if(summaryData.length === 0) {
+    tableRows = '<tr><td colspan="15" style="text-align:center;color:#9ca3af;padding:40px;">暂无月度汇总数据，请等待系统自动生成（每月1日凌晨）</td></tr>';
+  }
+  
   return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">月度考勤统计</h1><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:13px;color:#6b7280;">月份:</label><input type="month" value="2025-06" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"><button class="btn-primary" onclick="showToast(\'确认锁定中...\')">批量确认锁定</button></div></div>'
-  + '<div class="table-container" style="overflow-x:auto;">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>月份</th><th>应出勤</th><th>实际出勤</th><th>迟到次数</th><th>迟到分钟</th><th>早退次数</th><th>旷工天数</th><th>请假天数</th><th>出差天数</th><th>加班时长</th><th>修正次数</th><th>状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', summaryData.length)+'</div>';
+  + '<div class="table-container" style="overflow-x:auto;">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>月份</th><th>应出勤</th><th>实际出勤</th><th>迟到次数/分钟</th><th>早退次数</th><th>旷工天数</th><th>请假天数</th><th>出差天数</th><th>加班时长</th><th>修正次数</th><th>状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', summaryData.length)+'</div>';
 }
 
 function renderCorrection() {
@@ -1338,6 +1436,108 @@ function openTravelApplyForm() {
   + '<div class="form-group" style="margin-top:12px"><label>附件</label><input type="file"></div>'
   + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'travelFormEl\'))){showToast(\'出差申请已提交\');closeModal();}">提交</button></div></form>';
   openModal(html);
+}
+
+function openShiftDetail(id) {
+  var shift = shiftData.find(function(s){return s.id===id;});
+  if(!shift) return showToast('未找到班次信息');
+  
+  var deptBindings = shift.deptBindings || [];
+  var personalBindings = shift.personalBindings || [];
+  var dateBindings = shift.dateBindings || [];
+  
+  var deptRows = deptBindings.length > 0 ? deptBindings.map(function(d){
+    return '<tr><td>'+d+'</td><td>-</td><td><span class="op-link" onclick="showToast(\'已解绑\')">解绑</span></td></tr>';
+  }).join('') : '<tr><td colspan="3" style="text-align:center;color:#9ca3af;">暂无部门绑定</td></tr>';
+  
+  var personalRows = personalBindings.length > 0 ? personalBindings.map(function(p){
+    return '<tr><td>'+p.name+'</td><td>'+p.empNo+'</td><td>'+p.effectiveDate+' ~ '+p.expireDate+'</td><td><span class="op-link" onclick="showToast(\'已解绑\')">解绑</span></td></tr>';
+  }).join('') : '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">暂无个人绑定</td></tr>';
+  
+  var dateRows = dateBindings.length > 0 ? dateBindings.map(function(d){
+    return '<tr><td>'+d.name+'</td><td>'+d.empNo+'</td><td>'+d.date+'</td><td><span class="badge badge-blue">'+d.shiftName+'</span></td><td><span class="op-link" onclick="showToast(\'已删除\')">删除</span></td></tr>';
+  }).join('') : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;">暂无按日期绑定</td></tr>';
+  
+  var html = '<div class="modal-title">班次详情 - '+shift.name+'</div>'
+  + '<div class="info-grid" style="margin-bottom:20px;">'
+  + '<div class="info-item"><div class="info-label">班次编码</div><div class="info-value">'+shift.code+'</div></div>'
+  + '<div class="info-item"><div class="info-label">上班时间</div><div class="info-value">'+shift.start+'</div></div>'
+  + '<div class="info-item"><div class="info-label">下班时间</div><div class="info-value">'+shift.end+'</div></div>'
+  + '<div class="info-item"><div class="info-label">弹性范围</div><div class="info-value">±'+shift.flex+'分钟</div></div>'
+  + '<div class="info-item"><div class="info-label">工作天数</div><div class="info-value">'+shift.days+'</div></div>'
+  + '<div class="info-item"><div class="info-label">是否跨日</div><div class="info-value">'+(shift.crossDay?'是':'否')+'</div></div>'
+  + '<div class="info-item"><div class="info-label">启用状态</div><div class="info-value"><span class="badge '+(shift.status==='启用'?'badge-green':'badge-gray')+'">'+shift.status+'</span></div></div>'
+  + '</div>'
+  + '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;">部门绑定 ('+deptBindings.length+')</h3>'
+  + '<div class="table-container" style="margin-bottom:16px;"><table><thead><tr><th>部门名称</th><th>生效日期</th><th>操作</th></tr></thead><tbody>'+deptRows+'</tbody></table></div>'
+  + '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;">个人绑定 ('+personalBindings.length+')</h3>'
+  + '<div class="table-container" style="margin-bottom:16px;"><table><thead><tr><th>姓名</th><th>工号</th><th>有效期</th><th>操作</th></tr></thead><tbody>'+personalRows+'</tbody></table></div>'
+  + '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;">按日期绑定 ('+dateBindings.length+')</h3>'
+  + '<div class="table-container"><table><thead><tr><th>姓名</th><th>工号</th><th>日期</th><th>班次</th><th>操作</th></tr></thead><tbody>'+dateRows+'</tbody></table></div>';
+  
+  openModal(html, true);
+}
+
+function renderSpecialGroup() {
+  var groupTypeCounts = {};
+  specialGroupData.forEach(function(g){
+    if(!groupTypeCounts[g.groupType]) groupTypeCounts[g.groupType] = 0;
+    groupTypeCounts[g.groupType] += g.memberCount;
+  });
+  
+  var statCards = Object.keys(groupTypeCounts).map(function(type){
+    return '<div class="stat-card"><div class="stat-label">'+type+'人群</div><div class="stat-value">'+groupTypeCounts[type]+'</div><div class="stat-sub">共 '+specialGroupData.filter(function(g){return g.groupType===type;}).length+' 个组</div></div>';
+  }).join('');
+  
+  var rows = getPageData(specialGroupData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    var memberPreview = r.members.slice(0,3).map(function(m){return m.name;}).join('、');
+    if(r.members.length > 3) memberPreview += ' 等'+r.members.length+'人';
+    
+    return '<tr>'
+    + '<td>'+r.groupName+'</td>'
+    + '<td><span class="badge badge-purple">'+r.groupType+'</span></td>'
+    + '<td style="text-align:left;font-size:12px;line-height:1.6;">'+r.rule+'</td>'
+    + '<td>'+memberPreview+'</td>'
+    + '<td><span class="badge '+(r.status==='启用'?'badge-green':'badge-gray')+'">'+r.status+'</span></td>'
+    + '<td>'
+    + '<span class="op-link" onclick="openSpecialGroupDetail('+r.id+')">详情</span>'
+    + '<span class="op-link" onclick="showToast(\'编辑规则\')">编辑</span>'
+    + '<span class="op-link danger" onclick="showToast(\''+(r.status==='启用'?'已停用':'已启用')+'\')">'+(r.status==='启用'?'停用':'启用')+'</span>'
+    + '</td>'
+    + '</tr>';
+  }).join('');
+  
+  return '<div class="page-header"><h1 class="page-title">特殊人群管理</h1><button class="btn-primary" onclick="showToast(\'新增特殊人群组\')">+ 新增人群组</button></div>'
+  + '<div class="stat-cards">' + statCards + '</div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>人群类型</label><select><option value="">全部</option><option>哺乳</option><option>孕期</option><option>工伤</option><option>残疾</option><option>高管</option><option>外派</option></select></div>'
+  + '<div class="filter-item"><label>状态</label><select><option value="">全部</option><option>启用</option><option>停用</option></select></div>'
+  + '<button class="btn-secondary" onclick="showToast(\'已筛选\')">查询</button>'
+  + '</div>'
+  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>组名</th><th>人群类型</th><th>打卡规则</th><th>成员列表</th><th>状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', specialGroupData.length)+'</div>';
+}
+
+function openSpecialGroupDetail(id) {
+  var group = specialGroupData.find(function(g){return g.id===id;});
+  if(!group) return showToast('未找到该人群组');
+  
+  var memberRows = group.members.map(function(m){
+    return '<tr><td>'+m.name+'</td><td>'+m.empNo+'</td><td>'+m.dept+'</td><td>'+m.joinDate+'</td><td><span class="op-link" onclick="showToast(\'已移除\')">移除</span></td></tr>';
+  }).join('');
+  
+  var html = '<div class="modal-title">特殊人群详情 - '+group.groupName+'</div>'
+  + '<div class="info-grid" style="margin-bottom:20px;">'
+  + '<div class="info-item"><div class="info-label">人群类型</div><div class="info-value"><span class="badge badge-purple">'+group.groupType+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">启用状态</div><div class="info-value"><span class="badge '+(group.status==='启用'?'badge-green':'badge-gray')+'">'+group.status+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">创建时间</div><div class="info-value">'+group.createTime+'</div></div>'
+  + '<div class="info-item"><div class="info-label">创建人</div><div class="info-value">'+group.creator+'</div></div>'
+  + '<div class="info-item" style="grid-column:span 2;"><div class="info-label">打卡规则</div><div class="info-value" style="line-height:1.8;">'+group.rule+'</div></div>'
+  + '</div>'
+  + '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;">成员列表 ('+group.members.length+'人)</h3>'
+  + '<div class="table-container"><table><thead><tr><th>姓名</th><th>工号</th><th>部门</th><th>加入日期</th><th>操作</th></tr></thead><tbody>'+memberRows+'</tbody></table></div>';
+  
+  openModal(html, true);
 }
 
 function openOvertimeApplyForm() {
@@ -1474,6 +1674,11 @@ function getAttPrd() {
     + '<div class="prd-note"><div class="prd-note-title">班次配置字段</div>• 班次名称/编码：唯一标识<br>• 上下班时间：如09:00-18:00<br>• 弹性范围：允许迟到/早退的分钟数<br>• 工作天数：周一至周五 / 排班制<br>• 是否跨日：夜班可能跨天</div>'
     + '<div class="prd-note"><div class="prd-note-title">绑定优先级</div>个人绑定 > 部门绑定 > 默认班次<br>• 优先级高的覆盖低的<br>• 可按日期单独设置例外班次</div>'
     + '<div class="prd-note"><div class="prd-note-title">标准班次模板</div>• 标准班次：09:00-18:00 ±15min<br>• 弹性班次：09:00-18:00 ±60min<br>• 早班：07:00-15:00 ±10min<br>• 中班：15:00-23:00 ±10min<br>• 夜班：23:00-07:00 ±10min（跨日）</div>',
+
+    special: '<div class="prd-note"><div class="prd-note-title">模块定位</div>特殊人群管理，为特定员工群体（哺乳/孕期/工伤/残疾/高管/外派等）设置专属打卡规则，系统自动应用差异化考勤策略。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">特殊人群类型</div>• <span class="highlight">哺乳</span>：每日额外增加60分钟哺乳假，上班可晚到30分钟，下班可早退30分钟<br>• <span class="highlight">孕期</span>：禁止安排夜班，允许弹性上下班（±1小时），每月可申请2天产检假<br>• <span class="highlight">工伤</span>：工伤期间免打卡，按正常出勤计算，需提供医院证明<br>• <span class="highlight">残疾</span>：可申请远程办公，打卡位置放宽至5公里范围<br>• <span class="highlight">高管</span>：免固定班次考勤，按月提交工作报告即可<br>• <span class="highlight">外派</span>：按当地时区打卡，需绑定GPS定位验证</div>'
+    + '<div class="prd-note"><div class="prd-note-title">操作说明</div>• 创建人群组：选择人群类型 → 填写打卡规则 → 添加成员<br>• 成员管理：支持批量导入/移除<br>• 规则调整：可随时修改打卡规则，修改后即时生效<br>• 状态控制：启用/停用人群组，停用时成员恢复常规考勤规则</div>'
+    + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 考勤明细自动识别特殊人群身份<br>• 月度汇总统计时排除特殊规则影响<br>• 审批流程自动关联特殊人群规则（如孕期产检假无需扣减年假）</div>',
 
     apply: '<div class="prd-note"><div class="prd-note-title">模块定位</div>统一管理5种申请类型：请假、出差、加班、补卡、外勤，每种类型有不同的表单字段和审批流程。</div>'
     + '<div class="prd-note"><div class="prd-note-title">5种申请类型</div>• <span class="highlight">请假</span>：选择假期类型（年休假/病假/事假等），自动扣减余额<br>• <span class="highlight">出差</span>：填写地点、事由、交通方式、预计费用<br>• <span class="highlight">加班</span>：区分工作日/休息日/节假日，影响加班费计算<br>• <span class="highlight">补卡</span>：忘记打卡时补充记录<br>• <span class="highlight">外勤</span>：外出办公，不计入迟到</div>'
