@@ -119,6 +119,28 @@ tr:hover { background: #f8fafc; }
 .link-display { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px 16px; margin: 12px 0; display: flex; align-items: center; gap: 10px; }
 .link-display input { flex: 1; border: none; background: transparent; font-size: 13px; color: #0369a1; outline: none; }
 .link-display .copy-btn { background: #0ea5e9; color: #fff; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+.nav-group-header { display: flex; align-items: center; padding: 12px 20px; color: #94a3b8; cursor: pointer; transition: all .2s; font-size: 14px; font-weight: 600; background: #162033; border-bottom: 1px solid #1e293b; }
+.nav-group-header:hover { background: #1e293b; color: #e2e8f0; }
+.nav-group-header .nav-icon { width: 20px; margin-right: 10px; text-align: center; }
+.nav-group-header .arrow { margin-left: auto; font-size: 10px; transition: transform .2s; }
+.nav-group-header.collapsed .arrow { transform: rotate(-90deg); }
+.nav-sub-item { display: flex; align-items: center; padding: 10px 20px 10px 44px; color: #94a3b8; cursor: pointer; transition: all .2s; font-size: 13px; }
+.nav-sub-item:hover { background: #334155; color: #e2e8f0; }
+.nav-sub-item.active { background: #3b82f6; color: #fff; }
+.nav-sub-item .nav-icon { width: 18px; margin-right: 8px; text-align: center; font-size: 13px; }
+.stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.stat-card { background: #fff; border-radius: 10px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.stat-card .stat-label { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+.stat-card .stat-value { font-size: 24px; font-weight: 700; color: #1e293b; }
+.stat-card .stat-sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+.shift-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.shift-card .shift-name { font-size: 15px; font-weight: 700; color: #1e293b; }
+.shift-card .shift-time { font-size: 13px; color: #3b82f6; font-weight: 600; }
+.shift-card .shift-meta { font-size: 12px; color: #6b7280; }
+.att-sub-tab-bar { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 16px; flex-wrap: wrap; }
+.att-sub-tab { padding: 8px 14px; cursor: pointer; font-size: 13px; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+.att-sub-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; font-weight: 600; }
+.att-sub-tab:hover { color: #3b82f6; background: #f0f9ff; }
 </style>
 </head>
 <body>
@@ -180,6 +202,7 @@ function genIdCard() { var area=String(randInt(110000,659999)); var y=randInt(19
 function genPhone() { return '1'+randInt(30,99)+String(randInt(10000000,99999999)); }
 
 var onboardData=[], regularData=[], transferData=[], renewData=[], resignData=[], rewardData=[], tagData=[], employeeData=[];
+var punchData=[], shiftData=[], leaveData=[], leaveBalanceData=[], dailyAttData=[], summaryData=[], correctionData=[], auditLogData=[];
 
 function initData() {
   var i;
@@ -208,37 +231,129 @@ function initData() {
   for(i=0;i<50;i++){
     employeeData.push({ id:i+1, name:rand(NAMES), empNo:'EMP'+String(randInt(1000,9999)), dept:rand(DEPTS), pos:rand(POSITIONS), entryDate:randDate(2020,2025), phone:genPhone(), status:rand(EMP_STATUS), idCard:genIdCard(), bank:'6222'+String(randInt(1000000000000,9999999999999)) });
   }
+  // ---- 考勤管理 mock data ----
+  var punchSources = ['企微APP','指纹机','刷脸机'];
+  var punchLocations = ['深圳总部1楼大堂','深圳总部3楼前台','深圳总部B区门禁','北京分公司前台','上海分公司1楼'];
+  for(i=0;i<60;i++){
+    var pName = rand(NAMES);
+    var pDept = rand(DEPTS);
+    var pType = Math.random()>0.5?'上班':'下班';
+    var pHour = pType==='上班'? randInt(7,10) : randInt(17,21);
+    var pMin = randInt(0,59);
+    punchData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:pName, dept:pDept, datetime:randDate(2025,2025)+' '+String(pHour).padStart(2,'0')+':'+String(pMin).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), punchType:pType, source:rand(punchSources), location:rand(punchLocations) });
+  }
+  shiftData = [
+    { id:1, name:'标准班次', code:'STD01', start:'09:00', end:'18:00', flex:15, days:'周一至周五', crossDay:false, status:'启用', bindCount:186 },
+    { id:2, name:'弹性班次', code:'FLEX01', start:'09:00', end:'18:00', flex:60, days:'周一至周五', crossDay:false, status:'启用', bindCount:42 },
+    { id:3, name:'早班', code:'EAR01', start:'07:00', end:'15:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:28 },
+    { id:4, name:'中班', code:'MID01', start:'15:00', end:'23:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:25 },
+    { id:5, name:'夜班', code:'NIGHT01', start:'23:00', end:'07:00', flex:10, days:'排班制', crossDay:true, status:'停用', bindCount:12 }
+  ];
+  var leaveTypes = ['请假','出差','加班','补卡','外勤'];
+  var holidayTypes = ['年休假','病假','事假','婚假','产假','陪产假','丧假','调休假','育儿假','工伤假'];
+  var applyStatuses = ['待审批','审批中','已通过','已驳回'];
+  for(i=0;i<40;i++){
+    var aType = rand(leaveTypes);
+    var hType = aType==='请假'? rand(holidayTypes) : '';
+    var aStatus = rand(applyStatuses);
+    var dur = aType==='请假'? randInt(1,5)+'天' : aType==='加班'? randInt(1,8)+'小时' : aType==='出差'? randInt(1,7)+'天' : '1次';
+    leaveData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:rand(NAMES), dept:rand(DEPTS), applyType:aType, holidayType:hType, startTime:randDate(2025,2025)+' '+(aType==='加班'?String(randInt(18,20)).padStart(2,'0'):'09')+':00', endTime:randDate(2025,2025)+' '+(aType==='加班'?String(randInt(21,23)).padStart(2,'0'):'18')+':00', duration:dur, status:aStatus, approver:rand(NAMES) });
+  }
+  for(i=0;i<15;i++){
+    leaveBalanceData.push({ id:i+1, name:rand(NAMES), empNo:'EMP'+String(randInt(1000,9999)), dept:rand(DEPTS), annualTotal:randInt(5,15), annualUsed:randInt(0,8), annualRemain:0, sickTotal:10, sickUsed:randInt(0,5), personalUsed:randInt(0,3), parentalUsed:randInt(0,5), compUsed:randInt(0,4) });
+    leaveBalanceData[i].annualRemain = leaveBalanceData[i].annualTotal - leaveBalanceData[i].annualUsed;
+  }
+  var weekDays = ['周一','周二','周三','周四','周五','周六','周日'];
+  var attStatuses = ['正常','正常','正常','正常','正常','迟到','早退','旷工','请假','出差','加班','外勤'];
+  for(i=0;i<50;i++){
+    var dName = rand(NAMES);
+    var dDept = rand(DEPTS);
+    var dDate = randDate(2025,2025);
+    var dWeek = rand(weekDays);
+    var dShift = rand(['标准班次','弹性班次','早班','中班']);
+    var dAttStatus = rand(attStatuses);
+    var lateMin = dAttStatus==='迟到'? randInt(1,30) : 0;
+    var earlyMin = dAttStatus==='早退'? randInt(1,20) : 0;
+    var workHours = dAttStatus==='请假'? 0 : dAttStatus==='旷工'? 0 : (8 - lateMin/60 - earlyMin/60).toFixed(1);
+    dailyAttData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:dName, dept:dDept, date:dDate, week:dWeek, shift:dShift, shouldStart:'09:00', shouldEnd:'18:00', actualStart: dAttStatus==='请假'||dAttStatus==='旷工'?'--':('09:'+String(randInt(0, lateMin>0?lateMin+5:10)).padStart(2,'0')), actualEnd: dAttStatus==='请假'||dAttStatus==='旷工'?'--':('17:'+String(randInt(50,59)).padStart(2,'0')), startSource:rand(punchSources), endSource:rand(punchSources), attStatus:dAttStatus, lateMin:lateMin, earlyMin:earlyMin, workHours:workHours, dataStatus:Math.random()>0.9?'已修正':'系统计算' });
+  }
+  var summaryStatuses = ['草稿','已确认','已锁定'];
+  for(i=0;i<20;i++){
+    summaryData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:rand(NAMES), dept:rand(DEPTS), month:'2025-'+String(randInt(1,6)).padStart(2,'0'), shouldDays:randInt(20,23), actualDays:randInt(18,23), lateCount:randInt(0,3), lateMin:randInt(0,30), earlyCount:randInt(0,2), absentDays:randInt(0,1), leaveDays:randInt(0,3), travelDays:randInt(0,5), overtimeHours:randInt(0,20), correctCount:randInt(0,2), status:rand(summaryStatuses) });
+  }
+  for(i=0;i<10;i++){
+    correctionData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:rand(NAMES), date:randDate(2025,2025), operator:rand(NAMES)+'(HR)', beforeStatus:rand(['迟到','早退','旷工','正常']), afterStatus:rand(['正常','请假','出差','加班']), beforeStart:'09:'+String(randInt(10,35)).padStart(2,'0'), afterEnd:'18:'+String(randInt(0,30)).padStart(2,'0'), reason:rand(['系统故障补卡','外出公干补录','设备异常修正','排班错误修正','客户现场补卡']), opTime:randDate(2025,2025)+' '+String(randInt(9,17)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), opType:Math.random()>0.3?'修正':'撤销修正' });
+  }
+  var auditTypes = ['修正','撤销修正','确认锁定','解锁','导出','手动拉取','额度调整'];
+  for(i=0;i<25;i++){
+    auditLogData.push({ id:i+1, opEmpNo:'EMP'+String(randInt(1000,9999)), opName:rand(NAMES), opTime:randDate(2025,2025)+' '+String(randInt(8,18)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), opType:rand(auditTypes), opTarget:rand(['打卡数据','考勤明细','月度汇总','假期额度','班次配置','修正记录']), opResult:Math.random()>0.1?'成功':'失败', ip:'10.'+randInt(0,255)+'.'+randInt(0,255)+'.'+randInt(1,254) });
+  }
 }
 initData();
 
 // ============ NAVIGATION ============
-var MODULES = [
-  { key:'onboard', name:'入职管理', icon:'📋' },
-  { key:'regular', name:'转正管理', icon:'✅' },
-  { key:'transfer', name:'调动管理', icon:'🔄' },
-  { key:'renew', name:'续签管理', icon:'📝' },
-  { key:'resign', name:'离职管理', icon:'🚪' },
-  { key:'reward', name:'奖惩记录', icon:'🏆' },
-  { key:'tag', name:'标签管理', icon:'🏷️' },
-  { key:'employee', name:'员工档案', icon:'👤' }
+var NAV_GROUPS = [
+  { name:'人事管理', icon:'👥', collapsed:false, modules:[
+    { key:'onboard', name:'入职管理', icon:'📋' },
+    { key:'regular', name:'转正管理', icon:'✅' },
+    { key:'transfer', name:'调动管理', icon:'🔄' },
+    { key:'renew', name:'续签管理', icon:'📝' },
+    { key:'resign', name:'离职管理', icon:'🚪' },
+    { key:'reward', name:'奖惩记录', icon:'🏆' },
+    { key:'tag', name:'标签管理', icon:'🏷️' },
+    { key:'employee', name:'员工档案', icon:'👤' }
+  ]},
+  { name:'考勤管理', icon:'⏰', collapsed:false, modules:[
+    { key:'attendance', name:'考勤管理', icon:'⏰' }
+  ]}
 ];
 var currentModule = 'onboard';
+var currentAttSub = 'punch';
+var ATT_SUBS = [
+  { key:'punch', name:'打卡数据' },
+  { key:'shift', name:'班次管理' },
+  { key:'apply', name:'请假/出差/加班' },
+  { key:'leave', name:'假期管理' },
+  { key:'daily', name:'考勤明细' },
+  { key:'summary', name:'考勤统计' },
+  { key:'correct', name:'数据修正' },
+  { key:'audit', name:'审计日志' }
+];
 var currentPage = {};
 var pageSizeMap = {};
-MODULES.forEach(function(m) { currentPage[m.key]=1; pageSizeMap[m.key]=20; });
+NAV_GROUPS.forEach(function(g) { g.modules.forEach(function(m) { currentPage[m.key]=1; pageSizeMap[m.key]=20; }); });
 
 function renderNav() {
   var nav = document.getElementById('sidebarNav');
-  nav.innerHTML = MODULES.map(function(m) {
-    return '<div class="nav-item '+(m.key===currentModule?'active':'')+'" onclick="switchPage(\''+m.key+'\')"><span class="nav-icon">'+m.icon+'</span>'+m.name+'</div>';
-  }).join('');
+  var html = '';
+  NAV_GROUPS.forEach(function(g, gi) {
+    var collapsed = g.collapsed;
+    html += '<div class="nav-group-header'+(collapsed?' collapsed':'')+'" onclick="toggleNavGroup('+gi+')"><span class="nav-icon">'+g.icon+'</span>'+g.name+'<span class="arrow">▼</span></div>';
+    if(!collapsed) {
+      g.modules.forEach(function(m) {
+        html += '<div class="nav-sub-item '+(m.key===currentModule?'active':'')+'" onclick="switchPage(\''+m.key+'\')"><span class="nav-icon">'+m.icon+'</span>'+m.name+'</div>';
+      });
+    }
+  });
+  nav.innerHTML = html;
+}
+
+function toggleNavGroup(gi) {
+  NAV_GROUPS[gi].collapsed = !NAV_GROUPS[gi].collapsed;
+  renderNav();
 }
 
 function switchPage(key) {
   currentModule = key;
+  if(key === 'attendance') currentAttSub = 'punch';
   renderNav();
   renderPage();
   renderPrd();
+}
+
+function switchAttSub(key) {
+  currentAttSub = key;
+  renderPage();
 }
 
 // ============ TOAST ============
@@ -340,6 +455,7 @@ function renderPage() {
     case 'reward': c.innerHTML = renderReward(); break;
     case 'tag': c.innerHTML = renderTag(); break;
     case 'employee': c.innerHTML = renderEmployee(); break;
+    case 'attendance': c.innerHTML = renderAttendance(); break;
   }
 }
 
@@ -1023,6 +1139,269 @@ function renderEmpDetailModal() {
   document.getElementById('modalOverlay').classList.remove('hidden');
 }
 
+// ============ ATTENDANCE MODULE ============
+var attApplyTab = 'leave';
+
+function renderAttendance() {
+  var subTabsHtml = ATT_SUBS.map(function(s) { return '<div class="att-sub-tab '+(s.key===currentAttSub?'active':'')+'" onclick="switchAttSub(\''+s.key+'\')">'+s.name+'</div>'; }).join('');
+  var content = '';
+  switch(currentAttSub) {
+    case 'punch': content = renderPunchData(); break;
+    case 'shift': content = renderShiftMgmt(); break;
+    case 'apply': content = renderApplyMgmt(); break;
+    case 'leave': content = renderLeaveMgmt(); break;
+    case 'daily': content = renderDailyAtt(); break;
+    case 'summary': content = renderAttSummary(); break;
+    case 'correct': content = renderCorrection(); break;
+    case 'audit': content = renderAttAudit(); break;
+  }
+  return '<div class="page-header"><h1 class="page-title">考勤管理</h1></div>'
+  + '<div class="att-sub-tab-bar">'+subTabsHtml+'</div>'
+  + content;
+}
+
+function attStatusBadge(s) {
+  if(s==='正常') return 'badge-green';
+  if(s==='迟到'||s==='早退') return 'badge-yellow';
+  if(s==='旷工') return 'badge-red';
+  if(s==='请假'||s==='出差'||s==='加班'||s==='外勤') return 'badge-blue';
+  return 'badge-gray';
+}
+
+function applyTypeBadge(t) {
+  if(t==='请假') return 'badge-purple';
+  if(t==='出差') return 'badge-blue';
+  if(t==='加班') return 'badge-green';
+  if(t==='补卡') return 'badge-yellow';
+  if(t==='外勤') return 'badge-gray';
+  return 'badge-gray';
+}
+
+function renderPunchData() {
+  var rows = getPageData(punchData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.datetime+'</td><td><span class="badge '+(r.punchType==='上班'?'badge-blue':'badge-green')+'">'+r.punchType+'</span></td><td>'+r.source+'</td><td>'+r.location+'</td></tr>';
+  }).join('');
+  return '<div class="stat-cards">'
+  + '<div class="stat-card"><div class="stat-label">今日打卡人数</div><div class="stat-value">286</div><div class="stat-sub">应到 312 人</div></div>'
+  + '<div class="stat-card"><div class="stat-label">未打卡人数</div><div class="stat-value" style="color:#ef4444;">26</div><div class="stat-sub">需跟进处理</div></div>'
+  + '<div class="stat-card"><div class="stat-label">异常打卡</div><div class="stat-value" style="color:#f59e0b;">12</div><div class="stat-sub">位置/时间异常</div></div>'
+  + '<div class="stat-card"><div class="stat-label">数据源分布</div><div class="stat-value">企微APP</div><div class="stat-sub">占比 72%</div></div>'
+  + '</div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>日期范围起</label><input type="date"></div>'
+  + '<div class="filter-item"><label>日期范围止</label><input type="date"></div>'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>来源</label><select><option value="">全部</option><option>企微APP</option><option>指纹机</option><option>刷脸机</option></select></div>'
+  + '<div class="filter-item"><label>员工</label><input placeholder="姓名/工号"></div>'
+  + '<button class="btn-secondary" onclick="showToast(\'已筛选\')">查询</button>'
+  + '<button class="btn-primary" onclick="showToast(\'手动拉取中...\')">手动拉取</button>'
+  + '</div>'
+  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>打卡时间</th><th>打卡类型</th><th>来源</th><th>打卡位置</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', punchData.length)+'</div>';
+}
+
+function renderShiftMgmt() {
+  var cardsHtml = shiftData.map(function(s) {
+    return '<div class="shift-card"><div class="shift-name">'+s.name+' <span class="badge '+(s.status==='启用'?'badge-green':'badge-gray')+'" style="float:right;">'+s.status+'</span></div>'
+    + '<div class="shift-time">'+s.start+' - '+s.end+' <span style="font-size:12px;color:#6b7280;">±'+s.flex+'min</span></div>'
+    + '<div class="shift-meta">编码: '+s.code+' | '+s.days+(s.crossDay?' | <span style="color:#ef4444;">跨日</span>':'')+'</div>'
+    + '<div class="shift-meta">绑定人数: '+s.bindCount+'人</div>'
+    + '<div style="display:flex;gap:8px;margin-top:4px;"><span class="op-link" onclick="openShiftDetail('+s.id+')">详情</span><span class="op-link" onclick="showToast(\'编辑班次\')">编辑</span><span class="op-link danger" onclick="showToast(\''+(s.status==='启用'?'已停用':'已启用')+'\')">'+(s.status==='启用'?'停用':'启用')+'</span></div></div>';
+  }).join('');
+  var bindRows = shiftData.filter(function(s){return s.status==='启用';}).map(function(s){
+    return '<tr><td>'+s.name+'</td><td>'+s.code+'</td><td>'+s.start+'-'+s.end+'</td><td>'+s.days+'</td><td>'+s.bindCount+'人</td><td><span class="op-link" onclick="showToast(\'查看绑定\')">查看</span><span class="op-link" onclick="showToast(\'修改绑定\')">修改</span></td></tr>';
+  }).join('');
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="font-size:16px;font-weight:600;color:#374151;">班次模板</h2><button class="btn-primary" onclick="showToast(\'新增班次\')">+ 新增班次</button></div>'
+  + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px;">'+cardsHtml+'</div>'
+  + '<h2 style="font-size:16px;font-weight:600;color:#374151;margin-bottom:12px;">班次绑定情况</h2>'
+  + '<div class="table-container"><table><thead><tr><th>班次名称</th><th>编码</th><th>时间</th><th>工作天数</th><th>绑定人数</th><th>操作</th></tr></thead><tbody>'+bindRows+'</tbody></table></div>';
+}
+
+function renderApplyMgmt() {
+  var tabs = ['请假','出差','加班','补卡','外勤'];
+  var tabHtml = '<div class="tab-bar">'+tabs.map(function(t){return '<div class="tab-item '+(t===attApplyTab?'active':'')+'" onclick="attApplyTab=\''+t+'\';renderPage()">'+t+'</div>';}).join('')+'</div>';
+  var filtered = leaveData.filter(function(r){return r.applyType===attApplyTab;});
+  var rows = getPageData(filtered, 'attendance');
+  var tableRows = rows.map(function(r) {
+    var ops = '<span class="op-link" onclick="showToast(\'查看详情\')">查看</span>';
+    if(r.status==='待审批') ops += '<span class="op-link" onclick="showToast(\'审批通过\')">审批</span>';
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td><span class="badge '+applyTypeBadge(r.applyType)+'">'+r.applyType+'</span></td><td>'+r.holidayType+'</td><td>'+r.startTime+'</td><td>'+r.endTime+'</td><td>'+r.duration+'</td><td><span class="badge '+(r.status==='已通过'?'badge-green':r.status==='待审批'?'badge-yellow':r.status==='审批中'?'badge-blue':'badge-red')+'">'+r.status+'</span></td><td>'+ops+'</td></tr>';
+  }).join('');
+  return tabHtml
+  + '<div class="page-header" style="margin-bottom:12px;"><h1 class="page-title" style="font-size:16px;">'+attApplyTab+'申请记录</h1><button class="btn-primary" onclick="openApplyForm(\''+attApplyTab+'\')">+ 新建申请</button></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>员工</label><input placeholder="姓名/工号"></div>'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>审批状态</label><select><option value="">全部</option><option>待审批</option><option>审批中</option><option>已通过</option><option>已驳回</option></select></div>'
+  + '<button class="btn-secondary" onclick="showToast(\'已筛选\')">查询</button>'
+  + '</div>'
+  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>申请类型</th><th>假期类型</th><th>开始时间</th><th>结束时间</th><th>时长</th><th>状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', filtered.length)+'</div>';
+}
+
+function renderLeaveMgmt() {
+  var rows = getPageData(leaveBalanceData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    return '<tr><td>'+r.name+'</td><td>'+r.empNo+'</td><td>'+r.dept+'</td><td>'+r.annualTotal+'</td><td>'+r.annualUsed+'</td><td style="color:'+(r.annualRemain<=2?'#ef4444':'#16a34a')+';font-weight:600;">'+r.annualRemain+'</td><td>'+r.sickTotal+'</td><td>'+r.sickUsed+'</td><td>'+r.personalUsed+'</td><td>'+r.parentalUsed+'</td><td>'+r.compUsed+'</td><td><span class="op-link" onclick="showToast(\'调整额度\')">调整</span></td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">假期余额管理</h1><div style="display:flex;gap:8px;"><button class="btn-primary" onclick="showToast(\'批量初始化中...\')">批量初始化</button><button class="btn-secondary" onclick="showToast(\'导出成功\')">导出</button></div></div>'
+  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>姓名</th><th>工号</th><th>部门</th><th>年休假(应休)</th><th>年休假(已休)</th><th>年休假(剩余)</th><th>病假总额</th><th>病假已用</th><th>事假已用</th><th>育儿假已用</th><th>调休已用</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', leaveBalanceData.length)+'</div>';
+}
+
+function renderDailyAtt() {
+  var rows = getPageData(dailyAttData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.date+'</td><td>'+r.week+'</td><td>'+r.shift+'</td><td>'+r.shouldStart+'</td><td>'+r.shouldEnd+'</td><td>'+r.actualStart+'</td><td>'+r.actualEnd+'</td><td>'+r.startSource+'</td><td>'+r.endSource+'</td><td><span class="badge '+attStatusBadge(r.attStatus)+'">'+r.attStatus+'</span></td><td>'+r.lateMin+'</td><td>'+r.earlyMin+'</td><td>'+r.workHours+'</td><td><span class="badge '+(r.dataStatus==='已修正'?'badge-yellow':'badge-gray')+'">'+r.dataStatus+'</span></td><td><span class="op-link" onclick="openCorrectionForm('+r.id+')">修正</span></td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">考勤明细</h1><button class="btn-secondary" onclick="showToast(\'导出中...\')">导出Excel</button></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>日期</label><input type="date"></div>'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>考勤状态</label><select><option value="">全部</option><option>正常</option><option>迟到</option><option>早退</option><option>旷工</option><option>请假</option><option>出差</option><option>加班</option><option>外勤</option></select></div>'
+  + '<div class="filter-item"><label>数据状态</label><select><option value="">全部</option><option>系统计算</option><option>已修正</option></select></div>'
+  + '<button class="btn-secondary" onclick="showToast(\'已筛选\')">查询</button>'
+  + '</div>'
+  + '<div class="table-container" style="overflow-x:auto;">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>日期</th><th>星期</th><th>班次</th><th>应上班</th><th>应下班</th><th>实际上班</th><th>实际下班</th><th>上班来源</th><th>下班来源</th><th>考勤状态</th><th>迟到(min)</th><th>早退(min)</th><th>工时(h)</th><th>数据状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', dailyAttData.length)+'</div>';
+}
+
+function renderAttSummary() {
+  var rows = getPageData(summaryData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.month+'</td><td>'+r.shouldDays+'</td><td>'+r.actualDays+'</td><td>'+r.lateCount+'</td><td>'+r.lateMin+'</td><td>'+r.earlyCount+'</td><td>'+r.absentDays+'</td><td>'+r.leaveDays+'</td><td>'+r.travelDays+'</td><td>'+r.overtimeHours+'</td><td>'+r.correctCount+'</td><td><span class="badge '+(r.status==='已锁定'?'badge-red':r.status==='已确认'?'badge-green':'badge-gray')+'">'+r.status+'</span></td><td><span class="op-link'+(r.status!=='已锁定'?'':' disabled')+'" onclick="confirmLock('+r.id+')">确认锁定</span></td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">月度考勤统计</h1><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:13px;color:#6b7280;">月份:</label><input type="month" value="2025-06" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"><button class="btn-primary" onclick="showToast(\'确认锁定中...\')">批量确认锁定</button></div></div>'
+  + '<div class="table-container" style="overflow-x:auto;">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>月份</th><th>应出勤</th><th>实际出勤</th><th>迟到次数</th><th>迟到分钟</th><th>早退次数</th><th>旷工天数</th><th>请假天数</th><th>出差天数</th><th>加班时长</th><th>修正次数</th><th>状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', summaryData.length)+'</div>';
+}
+
+function renderCorrection() {
+  var rows = getPageData(correctionData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.date+'</td><td>'+r.operator+'</td><td><span class="badge '+attStatusBadge(r.beforeStatus)+'">'+r.beforeStatus+'</span></td><td><span class="badge '+attStatusBadge(r.afterStatus)+'">'+r.afterStatus+'</span></td><td>'+r.beforeStart+'</td><td>'+r.afterEnd+'</td><td>'+r.reason+'</td><td>'+r.opTime+'</td><td><span class="badge '+(r.opType==='修正'?'badge-blue':'badge-yellow')+'">'+r.opType+'</span></td><td><span class="op-link" onclick="showToast(\'撤销修正\')">撤销</span></td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">数据修正记录</h1></div>'
+  + '<div class="warning-box">⚠️ 数据修正是敏感操作，所有修正记录将永久保存至审计日志。修正优先级：修正后数据 > 原始打卡数据。</div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>日期范围</label><input type="date"></div>'
+  + '<button class="btn-secondary" onclick="showToast(\'已筛选\')">查询</button>'
+  + '</div>'
+  + '<div class="table-container" style="overflow-x:auto;">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>日期</th><th>操作人</th><th>修改前状态</th><th>修改后状态</th><th>修改前上班</th><th>修改后下班</th><th>备案原因</th><th>操作时间</th><th>操作类型</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', correctionData.length)+'</div>';
+}
+
+function renderAttAudit() {
+  var rows = getPageData(auditLogData, 'attendance');
+  var tableRows = rows.map(function(r) {
+    return '<tr><td>'+r.opEmpNo+'</td><td>'+r.opName+'</td><td>'+r.opTime+'</td><td><span class="badge badge-blue">'+r.opType+'</span></td><td>'+r.opTarget+'</td><td><span class="badge '+(r.opResult==='成功'?'badge-green':'badge-red')+'">'+r.opResult+'</span></td><td>'+r.ip+'</td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">审计日志</h1></div>'
+  + '<div class="warning-box">🔒 审计日志记录所有考勤相关操作，不可删除或修改。日志保留期限：永久。</div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>操作类型</label><select><option value="">全部</option><option>修正</option><option>撤销修正</option><option>确认锁定</option><option>解锁</option><option>导出</option><option>手动拉取</option><option>额度调整</option></select></div>'
+  + '<div class="filter-item"><label>操作人</label><input placeholder="姓名/工号"></div>'
+  + '<div class="filter-item"><label>日期范围</label><input type="date"></div>'
+  + '<button class="btn-secondary" onclick="showToast(\'已筛选\')">查询</button>'
+  + '</div>'
+  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>操作人工号</th><th>操作人姓名</th><th>操作时间</th><th>操作类型</th><th>操作对象</th><th>操作结果</th><th>IP地址</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', auditLogData.length)+'</div>';
+}
+
+function openApplyForm(type) {
+  if(type==='请假') openLeaveApplyForm();
+  else if(type==='出差') openTravelApplyForm();
+  else if(type==='加班') openOvertimeApplyForm();
+  else showToast('新建'+type+'申请');
+}
+
+function openLeaveApplyForm() {
+  var html = '<div class="modal-title">新建请假申请</div><form id="leaveFormEl" onsubmit="return false">'
+  + '<div class="form-grid">'
+  + '<div class="form-group"><label><span class="req">*</span> 假期类型</label><select data-required><option value="">请选择</option><option>年休假</option><option>病假</option><option>事假</option><option>婚假</option><option>产假</option><option>陪产假</option><option>丧假</option><option>调休假</option><option>育儿假</option><option>工伤假</option></select><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 开始时间</label><input data-required type="datetime-local"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 结束时间</label><input data-required type="datetime-local"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label>时长</label><input disabled value="自动计算" placeholder="根据起止时间自动计算"></div>'
+  + '<div class="form-group"><label>工作交接人</label><select><option value="">请选择</option>'+NAMES.slice(0,8).map(function(n){return '<option>'+n+'</option>';}).join('')+'</select></div>'
+  + '<div class="form-group"><label>附件</label><input type="file"></div>'
+  + '</div>'
+  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 请假原因</label><textarea data-required rows="4" placeholder="请详细说明请假原因"></textarea><span class="error-msg">必填</span></div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'leaveFormEl\'))){showToast(\'请假申请已提交\');closeModal();}">提交</button></div></form>';
+  openModal(html);
+}
+
+function openTravelApplyForm() {
+  var html = '<div class="modal-title">新建出差申请</div><form id="travelFormEl" onsubmit="return false">'
+  + '<div class="form-grid">'
+  + '<div class="form-group"><label><span class="req">*</span> 出差地点</label><input data-required placeholder="请输入出差地点"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 开始日期</label><input data-required type="date"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 结束日期</label><input data-required type="date"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label>交通方式</label><select><option value="">请选择</option><option>飞机</option><option>高铁</option><option>火车</option><option>自驾</option><option>其他</option></select></div>'
+  + '<div class="form-group"><label>预计费用</label><input type="number" placeholder="选填"></div>'
+  + '</div>'
+  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 出差事由</label><textarea data-required rows="4" placeholder="请详细说明出差目的和任务"></textarea><span class="error-msg">必填</span></div>'
+  + '<div class="form-group" style="margin-top:12px"><label>附件</label><input type="file"></div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'travelFormEl\'))){showToast(\'出差申请已提交\');closeModal();}">提交</button></div></form>';
+  openModal(html);
+}
+
+function openOvertimeApplyForm() {
+  var html = '<div class="modal-title">新建加班申请</div><form id="overtimeFormEl" onsubmit="return false">'
+  + '<div class="form-grid">'
+  + '<div class="form-group"><label><span class="req">*</span> 加班日期</label><input data-required type="date"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 开始时间</label><input data-required type="time"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 结束时间</label><input data-required type="time"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 加班类型</label><select data-required><option value="">请选择</option><option>工作日加班</option><option>休息日加班</option><option>节假日加班</option></select><span class="error-msg">必填</span></div>'
+  + '</div>'
+  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 加班原因</label><textarea data-required rows="4" placeholder="请详细说明加班原因和工作内容"></textarea><span class="error-msg">必填</span></div>'
+  + '<div class="form-group" style="margin-top:12px"><label>附件</label><input type="file"></div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'overtimeFormEl\'))){showToast(\'加班申请已提交\');closeModal();}">提交</button></div></form>';
+  openModal(html);
+}
+
+function openCorrectionForm(id) {
+  var r = dailyAttData.find(function(x){return x.id===id;}) || {};
+  var html = '<div class="modal-title">数据修正 - '+r.name+' ('+r.date+')</div>'
+  + '<div class="warning-box">⚠️ 修正操作将覆盖原始考勤数据，请填写备案原因。所有修正将被记录至审计日志。</div>'
+  + '<form id="correctionFormEl" onsubmit="return false">'
+  + '<div class="form-grid">'
+  + '<div class="form-group"><label>当前考勤状态</label><input disabled value="'+(r.attStatus||'--')+'"></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 修改后状态</label><select data-required><option value="">请选择</option><option>正常</option><option>迟到</option><option>早退</option><option>旷工</option><option>请假</option><option>出差</option><option>加班</option><option>外勤</option></select><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label>当前上班时间</label><input disabled value="'+(r.actualStart||'--')+'"></div>'
+  + '<div class="form-group"><label>修改后上班时间</label><input type="time" value="'+(r.actualStart&&r.actualStart!=='--'?r.actualStart:'')+'"></div>'
+  + '<div class="form-group"><label>当前下班时间</label><input disabled value="'+(r.actualEnd||'--')+'"></div>'
+  + '<div class="form-group"><label>修改后下班时间</label><input type="time" value="'+(r.actualEnd&&r.actualEnd!=='--'?r.actualEnd:'')+'"></div>'
+  + '</div>'
+  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 备案原因</label><textarea data-required rows="3" placeholder="请详细说明修正原因（必填）"></textarea><span class="error-msg">必填</span></div>'
+  + '<div class="form-group" style="margin-top:12px"><label>附件证明</label><input type="file"></div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'correctionFormEl\'))){showToast(\'修正已提交，等待审批\');closeModal();}">提交修正</button></div></form>';
+  openModal(html);
+}
+
+function openShiftDetail(id) {
+  var s = shiftData.find(function(x){return x.id===id;});
+  if(!s) return;
+  var html = '<div class="modal-title">班次详情 - '+s.name+'</div>'
+  + '<div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">班次名称</div><div class="info-value">'+s.name+'</div></div>'
+  + '<div class="info-item"><div class="info-label">班次编码</div><div class="info-value">'+s.code+'</div></div>'
+  + '<div class="info-item"><div class="info-label">上班时间</div><div class="info-value">'+s.start+'</div></div>'
+  + '<div class="info-item"><div class="info-label">下班时间</div><div class="info-value">'+s.end+'</div></div>'
+  + '<div class="info-item"><div class="info-label">弹性范围</div><div class="info-value">±'+s.flex+'分钟</div></div>'
+  + '<div class="info-item"><div class="info-label">工作天数</div><div class="info-value">'+s.days+'</div></div>'
+  + '<div class="info-item"><div class="info-label">是否跨日</div><div class="info-value">'+(s.crossDay?'是':'否')+'</div></div>'
+  + '<div class="info-item"><div class="info-label">状态</div><div class="info-value"><span class="badge '+(s.status==='启用'?'badge-green':'badge-gray')+'">'+s.status+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">绑定人数</div><div class="info-value">'+s.bindCount+'人</div></div>'
+  + '</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()">关闭</button></div>';
+  openModal(html);
+}
+
+function confirmLock(id) {
+  var r = summaryData.find(function(x){return x.id===id;});
+  if(!r || r.status==='已锁定') return;
+  confirmAction('🔒', '确认锁定「'+r.name+'」的'+r.month+'考勤统计？', '锁定后将无法再修改该月考勤数据，并自动推送至薪酬模块。', '确认锁定', false, function(){
+    r.status = '已锁定';
+    renderPage();
+    showToast('考勤统计已锁定，已推送至薪酬模块');
+  });
+}
+
 // ============ PRD NOTES ============
 function renderPrd() {
   var c = document.getElementById('prdContent');
@@ -1077,9 +1456,57 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">业务流程</div><div class="flow">入职建档 → 信息持续更新 → 各模块数据汇聚 → 档案查阅 → 离职归档</div></div>'
     + '<div class="prd-note"><div class="prd-note-title">关键字段说明</div>• 13个Tab页：个人基本信息/学历背景/工作经历/家庭信息/入职组织/岗位合同/考勤信息/薪酬记录/绩效历史/奖惩记录/培训记录/附件材料/变更日志<br>• 敏感字段脱敏：身份证前3后4、手机号前3后4、银行卡后4位、薪酬显示***</div>'
     + '<div class="prd-note"><div class="prd-note-title">业务规则</div>• 薪酬信息仅HR总监及以上可查看明文<br>• 变更日志记录所有字段修改（修改人/时间/前值/后值）<br>• 离职员工档案保留2年<br>• 档案导出需审批</div>'
-    + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 敏感字段加密存储<br>• 查看日志全量记录<br>• 批量导出需二次审批<br>• 脱敏规则不可配置（强制）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 敏感字段加密存储<br>• 查看日志全量记录<br>• 批量导出需二次审批<br>• 脱敏规则不可配置（强制）</div>',
+
+    attendance: getAttPrd()
   };
   c.innerHTML = prdData[currentModule] || '';
+}
+
+function getAttPrd() {
+  var subPrd = {
+    punch: '<div class="prd-note"><div class="prd-note-title">模块定位</div>原始打卡数据采集与展示，支持多数据源接入（企微API+硬件设备），提供去重、异常检测功能。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据源说明</div>• <span class="highlight">企微APP</span>：通过企业微信API定时拉取（每5分钟）<br>• <span class="highlight">指纹机</span>：本地硬件设备，数据上传至服务器<br>• <span class="highlight">刷脸机</span>：人脸识别设备，支持活体检测</div>'
+    + '<div class="prd-note"><div class="prd-note-title">去重规则</div>• 同一员工5分钟内多次打卡视为一次<br>• 以最早打卡时间为准<br>• 跨天打卡按实际日期分别记录</div>'
+    + '<div class="prd-note"><div class="prd-note-title">异常处理</div>• 位置异常：打卡位置不在指定范围内<br>• 时间异常：非工作时段打卡<br>• 设备异常：设备离线或数据格式错误</div>',
+
+    shift: '<div class="prd-note"><div class="prd-note-title">模块定位</div>班次模板管理，定义不同工作时间段的上下班时间、弹性范围、跨日规则，支持绑定到部门或个人。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">班次配置字段</div>• 班次名称/编码：唯一标识<br>• 上下班时间：如09:00-18:00<br>• 弹性范围：允许迟到/早退的分钟数<br>• 工作天数：周一至周五 / 排班制<br>• 是否跨日：夜班可能跨天</div>'
+    + '<div class="prd-note"><div class="prd-note-title">绑定优先级</div>个人绑定 > 部门绑定 > 默认班次<br>• 优先级高的覆盖低的<br>• 可按日期单独设置例外班次</div>'
+    + '<div class="prd-note"><div class="prd-note-title">标准班次模板</div>• 标准班次：09:00-18:00 ±15min<br>• 弹性班次：09:00-18:00 ±60min<br>• 早班：07:00-15:00 ±10min<br>• 中班：15:00-23:00 ±10min<br>• 夜班：23:00-07:00 ±10min（跨日）</div>',
+
+    apply: '<div class="prd-note"><div class="prd-note-title">模块定位</div>统一管理5种申请类型：请假、出差、加班、补卡、外勤，每种类型有不同的表单字段和审批流程。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">5种申请类型</div>• <span class="highlight">请假</span>：选择假期类型（年休假/病假/事假等），自动扣减余额<br>• <span class="highlight">出差</span>：填写地点、事由、交通方式、预计费用<br>• <span class="highlight">加班</span>：区分工作日/休息日/节假日，影响加班费计算<br>• <span class="highlight">补卡</span>：忘记打卡时补充记录<br>• <span class="highlight">外勤</span>：外出办公，不计入迟到</div>'
+    + '<div class="prd-note"><div class="prd-note-title">审批流程</div>申请人提交 → 直属上级审批 → HR备案 → 生效<br>• 请假>3天需部门负责人审批<br>• 出差需财务确认预算<br>• 加班需提前申请（特殊情况可事后补）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 请假通过后自动扣减假期余额<br>• 加班通过后计入工时统计<br>• 出差期间不计迟到/早退<br>• 补卡通过后修正考勤状态</div>',
+
+    leave: '<div class="prd-note"><div class="prd-note-title">模块定位</div>假期额度管理，维护每位员工的各类假期余额（应休/已休/剩余），支持批量初始化和手动调整。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">10种假期类型</div>年休假、病假、事假、婚假、产假、陪产假、丧假、调休假、育儿假、工伤假</div>'
+    + '<div class="prd-note"><div class="prd-note-title">年假规则</div>• 司龄<1年：5天<br>• 1年≤司龄<10年：7天<br>• 10年≤司龄<20年：10天<br>• 司龄≥20年：15天<br>• 每年1月1日自动刷新</div>'
+    + '<div class="prd-note"><div class="prd-note-title">额度管理</div>• 批量初始化：每年初为全员生成新年度假额<br>• 手动调整：HR可因特殊情况增减额度<br>• 过期处理：年假当年未用完可结转至次年3月底</div>',
+
+    daily: '<div class="prd-note"><div class="prd-note-title">模块定位</div>每日考勤明细展示，基于打卡数据和班次规则计算每位员工每天的考勤状态。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">展示字段</div>工号、姓名、部门、日期、星期、班次、应上下班时间、实际上下班时间、打卡来源、考勤状态、迟到/早退分钟、工时、数据状态</div>'
+    + '<div class="prd-note"><div class="prd-note-title">状态计算规则</div>• <span class="highlight">正常</span>：在弹性范围内打卡<br>• <span class="highlight">迟到</span>：上班打卡晚于规定时间+弹性范围<br>• <span class="highlight">早退</span>：下班打卡早于规定时间-弹性范围<br>• <span class="highlight">旷工</span>：全天无打卡且无请假/出差记录<br>• <span class="highlight">请假/出差/加班/外勤</span>：有对应审批通过的申请</div>'
+    + '<div class="prd-note"><div class="prd-note-title">筛选条件</div>日期、部门、考勤状态、数据状态（系统计算/已修正）</div>',
+
+    summary: '<div class="prd-note"><div class="prd-note-title">模块定位</div>月度考勤汇总统计，聚合每位员工当月的出勤、迟到、请假、加班等数据，确认后推送至薪酬模块。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">汇总字段</div>应出勤天数、实际出勤天数、迟到次数/分钟、早退次数、旷工天数、请假天数、出差天数、加班时长、修正次数</div>'
+    + '<div class="prd-note"><div class="prd-note-title">确认锁定流程</div>HR核对数据 → 点击"确认锁定" → 状态变为"已锁定" → 自动推送至薪酬模块<br>• 锁定后不可再修改该月数据<br>• 如需修改需先解锁（需HR总监权限）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">报表类型</div>• 个人月度考勤表<br>• 部门月度汇总表<br>• 公司整体考勤概览<br>• 异常人员清单</div>',
+
+    correct: '<div class="prd-note"><div class="prd-note-title">模块定位</div>考勤数据修正管理，允许HR对系统计算的考勤结果进行人工修正，所有修正永久记录至审计日志。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">修正权限</div>• HR专员：可修正本部门员工<br>• HR主管：可修正全公司<br>• 修正需填写备案原因（必填）<br>• 单次修正超过3条需主管二次确认</div>'
+    + '<div class="prd-note"><div class="prd-note-title">操作流程</div>选择员工和日期 → 查看当前状态 → 选择修改后状态/时间 → 填写备案原因 → 提交修正 → 记录至审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">痕迹记录</div>每次修正记录：操作人、操作时间、修改前状态/时间、修改后状态/时间、备案原因、IP地址<br>• 支持撤销修正（恢复至修正前状态）<br>• 撤销同样记录至审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据优先级规则</div><span class="highlight">核心规则</span>：修正后数据 > 审批通过的申请 > 原始打卡数据<br>• 修正后的考勤状态优先用于月度汇总<br>• 修正不影响原始打卡记录的保存</div>',
+
+    audit: '<div class="prd-note"><div class="prd-note-title">模块定位</div>审计日志记录所有考勤相关操作，包括数据修正、确认锁定、解锁、导出、手动拉取、额度调整等，保障数据安全可追溯。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">审计日志字段</div>操作人工号、操作人姓名、操作时间、操作类型、操作对象、操作结果（成功/失败）、IP地址</div>'
+    + '<div class="prd-note"><div class="prd-note-title">安全规则</div>• 日志不可删除或修改<br>• 保留期限：永久<br>• 仅HR总监及以上可查看完整日志<br>• 敏感操作（如批量修正）触发额外告警</div>'
+    + '<div class="prd-note"><div class="prd-note-title">备份策略</div>• 实时写入数据库<br>• 每日增量备份<br>• 每月全量备份至冷存储<br>• 支持按时间范围导出</div>'
+  };
+  return subPrd[currentAttSub] || '';
 }
 
 // ============ INIT ============
