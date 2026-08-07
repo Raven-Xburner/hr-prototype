@@ -137,10 +137,6 @@ tr:hover { background: #f8fafc; }
 .shift-card .shift-name { font-size: 15px; font-weight: 700; color: #1e293b; }
 .shift-card .shift-time { font-size: 13px; color: #3b82f6; font-weight: 600; }
 .shift-card .shift-meta { font-size: 12px; color: #6b7280; }
-.att-sub-tab-bar { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 16px; flex-wrap: wrap; }
-.att-sub-tab { padding: 8px 14px; cursor: pointer; font-size: 13px; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
-.att-sub-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; font-weight: 600; }
-.att-sub-tab:hover { color: #3b82f6; background: #f0f9ff; }
 .flow-steps { display:flex;align-items:center;gap:0;margin:20px 0;padding:16px 20px;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow-x:auto; }
 .flow-step { display:flex;flex-direction:column;align-items:center;gap:6px;min-width:90px; }
 .flow-step .step-circle { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:#d1d5db; }
@@ -454,7 +450,15 @@ var NAV_GROUPS = [
     { key:'employee', name:'员工档案', icon:'👤' }
   ]},
   { name:'考勤管理', icon:'⏰', collapsed:false, modules:[
-    { key:'attendance', name:'考勤管理', icon:'⏰' }
+    { key:'att_punch', name:'打卡数据', icon:'📍' },
+    { key:'att_shift', name:'班次管理', icon:'🕐' },
+    { key:'att_special', name:'特殊人群', icon:'👥' },
+    { key:'att_apply', name:'请假/出差/加班', icon:'📝' },
+    { key:'att_leave', name:'假期管理', icon:'️' },
+    { key:'att_daily', name:'考勤明细', icon:'📋' },
+    { key:'att_summary', name:'考勤统计', icon:'📊' },
+    { key:'att_correct', name:'数据修正', icon:'✏️' },
+    { key:'att_audit', name:'审计日志', icon:'' }
   ]},
   { name:'绩效管理', icon:'📊', collapsed:false, modules:[
     { key:'perf_indicator', name:'指标备案', icon:'📋' },
@@ -466,18 +470,6 @@ var NAV_GROUPS = [
   ]}
 ];
 var currentModule = 'onboard';
-var currentAttSub = 'punch';
-var ATT_SUBS = [
-  { key:'punch', name:'打卡数据' },
-  { key:'shift', name:'班次管理' },
-  { key:'special', name:'特殊人群' },
-  { key:'apply', name:'请假/出差/加班' },
-  { key:'leave', name:'假期管理' },
-  { key:'daily', name:'考勤明细' },
-  { key:'summary', name:'考勤统计' },
-  { key:'correct', name:'数据修正' },
-  { key:'audit', name:'审计日志' }
-];
 var currentPage = {};
 var pageSizeMap = {};
 NAV_GROUPS.forEach(function(g) { g.modules.forEach(function(m) { currentPage[m.key]=1; pageSizeMap[m.key]=20; }); });
@@ -504,15 +496,9 @@ function toggleNavGroup(gi) {
 
 function switchPage(key) {
   currentModule = key;
-  if(key === 'attendance') currentAttSub = 'punch';
   renderNav();
   renderPage();
   renderPrd();
-}
-
-function switchAttSub(key) {
-  currentAttSub = key;
-  renderPage();
 }
 
 // ============ TOAST ============
@@ -614,7 +600,15 @@ function renderPage() {
     case 'reward': c.innerHTML = renderReward(); break;
     case 'tag': c.innerHTML = renderTag(); break;
     case 'employee': c.innerHTML = renderEmployee(); break;
-    case 'attendance': c.innerHTML = renderAttendance(); break;
+    case 'att_punch': c.innerHTML = renderPunchData(); break;
+    case 'att_shift': c.innerHTML = renderShiftMgmt(); break;
+    case 'att_special': c.innerHTML = renderSpecialGroup(); break;
+    case 'att_apply': c.innerHTML = renderApplyMgmt(); break;
+    case 'att_leave': c.innerHTML = renderLeaveMgmt(); break;
+    case 'att_daily': c.innerHTML = renderDailyAtt(); break;
+    case 'att_summary': c.innerHTML = renderAttSummary(); break;
+    case 'att_correct': c.innerHTML = renderCorrection(); break;
+    case 'att_audit': c.innerHTML = renderAttAudit(); break;
     case 'perf_indicator': c.innerHTML = renderPerfIndicator(); break;
     case 'perf_plan': c.innerHTML = renderPerfPlan(); break;
     case 'perf_myassess': c.innerHTML = renderPerfMyAssess(); break;
@@ -1307,25 +1301,6 @@ function renderEmpDetailModal() {
 // ============ ATTENDANCE MODULE ============
 var attApplyTab = 'leave';
 
-function renderAttendance() {
-  var subTabsHtml = ATT_SUBS.map(function(s) { return '<div class="att-sub-tab '+(s.key===currentAttSub?'active':'')+'" onclick="switchAttSub(\''+s.key+'\')">'+s.name+'</div>'; }).join('');
-  var content = '';
-  switch(currentAttSub) {
-    case 'punch': content = renderPunchData(); break;
-    case 'shift': content = renderShiftMgmt(); break;
-    case 'special': content = renderSpecialGroup(); break;
-    case 'apply': content = renderApplyMgmt(); break;
-    case 'leave': content = renderLeaveMgmt(); break;
-    case 'daily': content = renderDailyAtt(); break;
-    case 'summary': content = renderAttSummary(); break;
-    case 'correct': content = renderCorrection(); break;
-    case 'audit': content = renderAttAudit(); break;
-  }
-  return '<div class="page-header"><h1 class="page-title">考勤管理</h1></div>'
-  + '<div class="att-sub-tab-bar">'+subTabsHtml+'</div>'
-  + content;
-}
-
 function attStatusBadge(s) {
   if(s==='正常') return 'badge-green';
   if(s==='迟到'||s==='早退') return 'badge-yellow';
@@ -1354,7 +1329,8 @@ function renderPunchData() {
     tableRows = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:40px;">暂无打卡数据，请点击"手动拉取"或等待系统自动同步</td></tr>';
   }
   
-  return '<div class="stat-cards">'
+  return '<div class="page-header"><h1 class="page-title">打卡数据</h1><button class="btn-primary" onclick="showToast(\'手动拉取中...\')">手动拉取</button></div>'
+  + '<div class="stat-cards">'
   + '<div class="stat-card"><div class="stat-label">今日打卡人数</div><div class="stat-value">286</div><div class="stat-sub">应到 312 人，缺勤 <span style="color:#ef4444;font-weight:600;">26</span> 人</div></div>'
   + '<div class="stat-card"><div class="stat-label">未打卡人数</div><div class="stat-value" style="color:#ef4444;">26</div><div class="stat-sub">需跟进处理，建议发送提醒</div></div>'
   + '<div class="stat-card"><div class="stat-label">异常打卡</div><div class="stat-value" style="color:#f59e0b;">12</div><div class="stat-sub">位置/时间异常，需人工审核</div></div>'
@@ -1395,7 +1371,8 @@ function renderShiftMgmt() {
     return '<tr><td>'+s.name+'</td><td>'+s.code+'</td><td>'+s.start+'-'+s.end+'</td><td>'+s.days+'</td><td>'+s.bindCount+'人</td><td style="text-align:left;">'+bindingInfo+'<div style="margin-top:6px;"><span class="op-link" onclick="openShiftDetail('+s.id+')">查看详情</span><span class="op-link" onclick="showToast(\'修改绑定\')">修改</span></div></td></tr>';
   }).join('');
   
-  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="font-size:16px;font-weight:600;color:#374151;">班次模板</h2><button class="btn-primary" onclick="showToast(\'新增班次\')">+ 新增班次</button></div>'
+  return '<div class="page-header"><h1 class="page-title">班次管理</h1><button class="btn-primary" onclick="showToast(\'新增班次\')">+ 新增班次</button></div>'
+  + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="font-size:16px;font-weight:600;color:#374151;">班次模板</h2></div>'
   + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px;">'+cardsHtml+'</div>'
   + '<h2 style="font-size:16px;font-weight:600;color:#374151;margin-bottom:12px;">班次绑定情况（按部门）</h2>'
   + '<div class="table-container"><table><thead><tr><th>班次名称</th><th>编码</th><th>时间</th><th>工作天数</th><th>绑定人数</th><th>绑定部门</th></tr></thead><tbody>'+bindRows+'</tbody></table></div>';
@@ -1412,7 +1389,7 @@ function renderApplyMgmt() {
     return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td><span class="badge '+applyTypeBadge(r.applyType)+'">'+r.applyType+'</span></td><td>'+r.holidayType+'</td><td>'+r.startTime+'</td><td>'+r.endTime+'</td><td>'+r.duration+'</td><td><span class="badge '+(r.status==='已通过'?'badge-green':r.status==='待审批'?'badge-yellow':r.status==='审批中'?'badge-blue':'badge-red')+'">'+r.status+'</span></td><td>'+ops+'</td></tr>';
   }).join('');
   return tabHtml
-  + '<div class="page-header" style="margin-bottom:12px;"><h1 class="page-title" style="font-size:16px;">'+attApplyTab+'申请记录</h1><button class="btn-primary" onclick="openApplyForm(\''+attApplyTab+'\')">+ 新建申请</button></div>'
+  + '<div class="page-header"><h1 class="page-title">'+attApplyTab+'申请记录</h1><button class="btn-primary" onclick="openApplyForm(\''+attApplyTab+'\')">+ 新建申请</button></div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>员工</label><input placeholder="姓名/工号"></div>'
   + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
@@ -1427,7 +1404,7 @@ function renderLeaveMgmt() {
   var tableRows = rows.map(function(r) {
     return '<tr><td>'+r.name+'</td><td>'+r.empNo+'</td><td>'+r.dept+'</td><td>'+r.annualTotal+'</td><td>'+r.annualUsed+'</td><td style="color:'+(r.annualRemain<=2?'#ef4444':'#16a34a')+';font-weight:600;">'+r.annualRemain+'</td><td>'+r.sickTotal+'</td><td>'+r.sickUsed+'</td><td>'+r.personalUsed+'</td><td>'+r.parentalUsed+'</td><td>'+r.compUsed+'</td><td><span class="op-link" onclick="showToast(\'调整额度\')">调整</span></td></tr>';
   }).join('');
-  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">假期余额管理</h1><div style="display:flex;gap:8px;"><button class="btn-primary" onclick="showToast(\'批量初始化中...\')">批量初始化</button><button class="btn-secondary" onclick="showToast(\'导出成功\')">导出</button></div></div>'
+  return '<div class="page-header"><h1 class="page-title">假期余额管理</h1><div style="display:flex;gap:8px;"><button class="btn-primary" onclick="showToast(\'批量初始化中...\')">批量初始化</button><button class="btn-secondary" onclick="showToast(\'导出成功\')">导出</button></div></div>'
   + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>姓名</th><th>工号</th><th>部门</th><th>年休假(应休)</th><th>年休假(已休)</th><th>年休假(剩余)</th><th>病假总额</th><th>病假已用</th><th>事假已用</th><th>育儿假已用</th><th>调休已用</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', leaveBalanceData.length)+'</div>';
 }
 
@@ -1450,7 +1427,7 @@ function renderDailyAtt() {
     tableRows = '<tr><td colspan="18" style="text-align:center;color:#9ca3af;padding:40px;">暂无考勤明细数据，请先完成班次配置和打卡数据同步</td></tr>';
   }
   
-  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">考勤明细</h1><button class="btn-secondary" onclick="showToast(\'导出中...\')">导出Excel</button></div>'
+  return '<div class="page-header"><h1 class="page-title">考勤明细</h1><button class="btn-secondary" onclick="showToast(\'导出中...\')">导出Excel</button></div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>日期</label><input type="date"></div>'
   + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
@@ -1477,7 +1454,7 @@ function renderAttSummary() {
     tableRows = '<tr><td colspan="15" style="text-align:center;color:#9ca3af;padding:40px;">暂无月度汇总数据，请等待系统自动生成（每月1日凌晨）</td></tr>';
   }
   
-  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">月度考勤统计</h1><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:13px;color:#6b7280;">月份:</label><input type="month" value="2025-06" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"><button class="btn-primary" onclick="showToast(\'确认锁定中...\')">批量确认锁定</button></div></div>'
+  return '<div class="page-header"><h1 class="page-title">月度考勤统计</h1><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:13px;color:#6b7280;">月份:</label><input type="month" value="2025-06" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"><button class="btn-primary" onclick="showToast(\'确认锁定中...\')">批量确认锁定</button></div></div>'
   + '<div class="table-container" style="overflow-x:auto;">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>月份</th><th>应出勤</th><th>实际出勤</th><th>迟到次数/分钟</th><th>早退次数</th><th>旷工天数</th><th>请假天数</th><th>出差天数</th><th>加班时长</th><th>修正次数</th><th>状态</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', summaryData.length)+'</div>';
 }
 
@@ -1486,7 +1463,7 @@ function renderCorrection() {
   var tableRows = rows.map(function(r) {
     return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.date+'</td><td>'+r.operator+'</td><td><span class="badge '+attStatusBadge(r.beforeStatus)+'">'+r.beforeStatus+'</span></td><td><span class="badge '+attStatusBadge(r.afterStatus)+'">'+r.afterStatus+'</span></td><td>'+r.beforeStart+'</td><td>'+r.afterEnd+'</td><td>'+r.reason+'</td><td>'+r.opTime+'</td><td><span class="badge '+(r.opType==='修正'?'badge-blue':'badge-yellow')+'">'+r.opType+'</span></td><td><span class="op-link" onclick="showToast(\'撤销修正\')">撤销</span></td></tr>';
   }).join('');
-  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">数据修正记录</h1></div>'
+  return '<div class="page-header"><h1 class="page-title">数据修正记录</h1></div>'
   + '<div class="warning-box">⚠️ 数据修正是敏感操作，所有修正记录将永久保存至审计日志。修正优先级：修正后数据 > 原始打卡数据。</div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
@@ -1501,7 +1478,7 @@ function renderAttAudit() {
   var tableRows = rows.map(function(r) {
     return '<tr><td>'+r.opEmpNo+'</td><td>'+r.opName+'</td><td>'+r.opTime+'</td><td><span class="badge badge-blue">'+r.opType+'</span></td><td>'+r.opTarget+'</td><td><span class="badge '+(r.opResult==='成功'?'badge-green':'badge-red')+'">'+r.opResult+'</span></td><td>'+r.ip+'</td></tr>';
   }).join('');
-  return '<div class="page-header"><h1 class="page-title" style="font-size:16px;">审计日志</h1></div>'
+  return '<div class="page-header"><h1 class="page-title">审计日志</h1></div>'
   + '<div class="warning-box">🔒 审计日志记录所有考勤相关操作，不可删除或修改。日志保留期限：永久。</div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>操作类型</label><select><option value="">全部</option><option>修正</option><option>撤销修正</option><option>确认锁定</option><option>解锁</option><option>导出</option><option>手动拉取</option><option>额度调整</option></select></div>'
@@ -2213,7 +2190,51 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">业务规则</div>• 薪酬信息仅HR总监及以上可查看明文<br>• 变更日志记录所有字段修改（修改人/时间/前值/后值）<br>• 离职员工档案保留2年<br>• 档案导出需审批</div>'
     + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 敏感字段加密存储<br>• 查看日志全量记录<br>• 批量导出需二次审批<br>• 脱敏规则不可配置（强制）</div>',
 
-    attendance: getAttPrd(),
+    att_punch: '<div class="prd-note"><div class="prd-note-title">模块定位</div>原始打卡数据采集与展示，支持多数据源接入（企微API+硬件设备），提供去重、异常检测功能。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据源说明</div>• <span class="highlight">企微APP</span>：通过企业微信API定时拉取（每5分钟）<br>• <span class="highlight">指纹机</span>：本地硬件设备，数据上传至服务器<br>• <span class="highlight">刷脸机</span>：人脸识别设备，支持活体检测</div>'
+    + '<div class="prd-note"><div class="prd-note-title">去重规则</div>• 同一员工5分钟内多次打卡视为一次<br>• 以最早打卡时间为准<br>• 跨天打卡按实际日期分别记录</div>'
+    + '<div class="prd-note"><div class="prd-note-title">异常处理</div>• 位置异常：打卡位置不在指定范围内<br>• 时间异常：非工作时段打卡<br>• 设备异常：设备离线或数据格式错误</div>',
+
+    att_shift: '<div class="prd-note"><div class="prd-note-title">模块定位</div>班次模板管理，定义不同工作时间段的上下班时间、弹性范围、跨日规则，支持绑定到部门或个人。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">班次配置字段</div>• 班次名称/编码：唯一标识<br>• 上下班时间：如09:00-18:00<br>• 弹性范围：允许迟到/早退的分钟数<br>• 工作天数：周一至周五 / 排班制<br>• 是否跨日：夜班可能跨天</div>'
+    + '<div class="prd-note"><div class="prd-note-title">绑定优先级</div>个人绑定 > 部门绑定 > 默认班次<br>• 优先级高的覆盖低的<br>• 可按日期单独设置例外班次</div>'
+    + '<div class="prd-note"><div class="prd-note-title">标准班次模板</div>• 标准班次：09:00-18:00 ±15min<br>• 弹性班次：09:00-18:00 ±60min<br>• 早班：07:00-15:00 ±10min<br>• 中班：15:00-23:00 ±10min<br>• 夜班：23:00-07:00 ±10min（跨日）</div>',
+
+    att_special: '<div class="prd-note"><div class="prd-note-title">模块定位</div>特殊人群管理，为特定员工群体（哺乳/孕期/工伤/残疾/高管/外派等）设置专属打卡规则，系统自动应用差异化考勤策略。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">特殊人群类型</div>• <span class="highlight">哺乳</span>：每日额外增加60分钟哺乳假，上班可晚到30分钟，下班可早退30分钟<br>• <span class="highlight">孕期</span>：禁止安排夜班，允许弹性上下班（±1小时），每月可申请2天产检假<br>• <span class="highlight">工伤</span>：工伤期间免打卡，按正常出勤计算，需提供医院证明<br>• <span class="highlight">残疾</span>：可申请远程办公，打卡位置放宽至5公里范围<br>• <span class="highlight">高管</span>：免固定班次考勤，按月提交工作报告即可<br>• <span class="highlight">外派</span>：按当地时区打卡，需绑定GPS定位验证</div>'
+    + '<div class="prd-note"><div class="prd-note-title">操作说明</div>• 创建人群组：选择人群类型 → 填写打卡规则 → 添加成员<br>• 成员管理：支持批量导入/移除<br>• 规则调整：可随时修改打卡规则，修改后即时生效<br>• 状态控制：启用/停用人群组，停用时成员恢复常规考勤规则</div>'
+    + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 考勤明细自动识别特殊人群身份<br>• 月度汇总统计时排除特殊规则影响<br>• 审批流程自动关联特殊人群规则（如孕期产检假无需扣减年假）</div>',
+
+    att_apply: '<div class="prd-note"><div class="prd-note-title">模块定位</div>统一管理5种申请类型：请假、出差、加班、补卡、外勤，每种类型有不同的表单字段和审批流程。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">5种申请类型</div>• <span class="highlight">请假</span>：选择假期类型（年休假/病假/事假等），自动扣减余额<br>• <span class="highlight">出差</span>：填写地点、事由、交通方式、预计费用<br>• <span class="highlight">加班</span>：区分工作日/休息日/节假日，影响加班费计算<br>• <span class="highlight">补卡</span>：忘记打卡时补充记录<br>• <span class="highlight">外勤</span>：外出办公，不计入迟到</div>'
+    + '<div class="prd-note"><div class="prd-note-title">审批流程</div>申请人提交 → 直属上级审批 → HR备案 → 生效<br>• 请假>3天需部门负责人审批<br>• 出差需财务确认预算<br>• 加班需提前申请（特殊情况可事后补）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 请假通过后自动扣减假期余额<br>• 加班通过后计入工时统计<br>• 出差期间不计迟到/早退<br>• 补卡通过后修正考勤状态</div>',
+
+    att_leave: '<div class="prd-note"><div class="prd-note-title">模块定位</div>假期额度管理，维护每位员工的各类假期余额（应休/已休/剩余），支持批量初始化和手动调整。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">10种假期类型</div>年休假、病假、事假、婚假、产假、陪产假、丧假、调休假、育儿假、工伤假</div>'
+    + '<div class="prd-note"><div class="prd-note-title">年假规则</div>• 司龄<1年：5天<br>• 1年≤司龄<10年：7天<br>• 10年≤司龄<20年：10天<br>• 司龄≥20年：15天<br>• 每年1月1日自动刷新</div>'
+    + '<div class="prd-note"><div class="prd-note-title">额度管理</div>• 批量初始化：每年初为全员生成新年度假额<br>• 手动调整：HR可因特殊情况增减额度<br>• 过期处理：年假当年未用完可结转至次年3月底</div>',
+
+    att_daily: '<div class="prd-note"><div class="prd-note-title">模块定位</div>每日考勤明细展示，基于打卡数据和班次规则计算每位员工每天的考勤状态。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">展示字段</div>工号、姓名、部门、日期、星期、班次、应上下班时间、实际上下班时间、打卡来源、考勤状态、迟到/早退分钟、工时、数据状态</div>'
+    + '<div class="prd-note"><div class="prd-note-title">状态计算规则</div>• <span class="highlight">正常</span>：在弹性范围内打卡<br>• <span class="highlight">迟到</span>：上班打卡晚于规定时间+弹性范围<br>• <span class="highlight">早退</span>：下班打卡早于规定时间-弹性范围<br>• <span class="highlight">旷工</span>：全天无打卡且无请假/出差记录<br>• <span class="highlight">请假/出差/加班/外勤</span>：有对应审批通过的申请</div>'
+    + '<div class="prd-note"><div class="prd-note-title">筛选条件</div>日期、部门、考勤状态、数据状态（系统计算/已修正）</div>',
+
+    att_summary: '<div class="prd-note"><div class="prd-note-title">模块定位</div>月度考勤汇总统计，聚合每位员工当月的出勤、迟到、请假、加班等数据，确认后推送至薪酬模块。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">汇总字段</div>应出勤天数、实际出勤天数、迟到次数/分钟、早退次数、旷工天数、请假天数、出差天数、加班时长、修正次数</div>'
+    + '<div class="prd-note"><div class="prd-note-title">确认锁定流程</div>HR核对数据 → 点击"确认锁定" → 状态变为"已锁定" → 自动推送至薪酬模块<br>• 锁定后不可再修改该月数据<br>• 如需修改需先解锁（需HR总监权限）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">报表类型</div>• 个人月度考勤表<br>• 部门月度汇总表<br>• 公司整体考勤概览<br>• 异常人员清单</div>',
+
+    att_correct: '<div class="prd-note"><div class="prd-note-title">模块定位</div>考勤数据修正管理，允许HR对系统计算的考勤结果进行人工修正，所有修正永久记录至审计日志。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">修正权限</div>• HR专员：可修正本部门员工<br>• HR主管：可修正全公司<br>• 修正需填写备案原因（必填）<br>• 单次修正超过3条需主管二次确认</div>'
+    + '<div class="prd-note"><div class="prd-note-title">操作流程</div>选择员工和日期 → 查看当前状态 → 选择修改后状态/时间 → 填写备案原因 → 提交修正 → 记录至审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">痕迹记录</div>每次修正记录：操作人、操作时间、修改前状态/时间、修改后状态/时间、备案原因、IP地址<br>• 支持撤销修正（恢复至修正前状态）<br>• 撤销同样记录至审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据优先级规则</div><span class="highlight">核心规则</span>：修正后数据 > 审批通过的申请 > 原始打卡数据<br>• 修正后的考勤状态优先用于月度汇总<br>• 修正不影响原始打卡记录的保存</div>',
+
+    att_audit: '<div class="prd-note"><div class="prd-note-title">模块定位</div>审计日志记录所有考勤相关操作，包括数据修正、确认锁定、解锁、导出、手动拉取、额度调整等，保障数据安全可追溯。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">审计日志字段</div>操作人工号、操作人姓名、操作时间、操作类型、操作对象、操作结果（成功/失败）、IP地址</div>'
+    + '<div class="prd-note"><div class="prd-note-title">安全规则</div>• 日志不可删除或修改<br>• 保留期限：永久<br>• 仅HR总监及以上可查看完整日志<br>• 敏感操作（如批量修正）触发额外告警</div>'
+    + '<div class="prd-note"><div class="prd-note-title">备份策略</div>• 实时写入数据库<br>• 每日增量备份<br>• 每月全量备份至冷存储<br>• 支持按时间范围导出</div>',
 
     perf_indicator: '<div class="prd-note"><div class="prd-note-title">模块定位</div>指标备案是绩效考核的起点，员工/主管提交当期考核指标（名称、权重、目标值），经HR审核备案后作为评分依据。仅"已备案"状态的指标才能进入评分环节。</div>'
     + '<div class="prd-note"><div class="prd-note-title">关键字段</div>• 考核周期：季度/年度，系统自动生成当期选项<br>• 指标名称：max 100字，同周期不可重复<br>• 指标类型：定量指标/定性指标<br>• 指标权重（%）：所有指标权重之和=100%，单项5%~80%<br>• 目标值：定量填数值范围，定性填描述<br>• 评分标准说明：优秀/良好/达标/未达标各档判断标准<br>• 备案状态：草稿/待审核/已备案/已驳回</div>'
@@ -2248,57 +2269,6 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">版本管理</div>• 每次编辑自动保存版本记录（操作人、时间、内容快照）<br>• 支持版本对比，可回退至任意历史版本<br>• HR可查看评语编辑历史记录</div>'
   };
   c.innerHTML = prdData[currentModule] || '';
-}
-
-function getAttPrd() {
-  var subPrd = {
-    punch: '<div class="prd-note"><div class="prd-note-title">模块定位</div>原始打卡数据采集与展示，支持多数据源接入（企微API+硬件设备），提供去重、异常检测功能。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">数据源说明</div>• <span class="highlight">企微APP</span>：通过企业微信API定时拉取（每5分钟）<br>• <span class="highlight">指纹机</span>：本地硬件设备，数据上传至服务器<br>• <span class="highlight">刷脸机</span>：人脸识别设备，支持活体检测</div>'
-    + '<div class="prd-note"><div class="prd-note-title">去重规则</div>• 同一员工5分钟内多次打卡视为一次<br>• 以最早打卡时间为准<br>• 跨天打卡按实际日期分别记录</div>'
-    + '<div class="prd-note"><div class="prd-note-title">异常处理</div>• 位置异常：打卡位置不在指定范围内<br>• 时间异常：非工作时段打卡<br>• 设备异常：设备离线或数据格式错误</div>',
-
-    shift: '<div class="prd-note"><div class="prd-note-title">模块定位</div>班次模板管理，定义不同工作时间段的上下班时间、弹性范围、跨日规则，支持绑定到部门或个人。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">班次配置字段</div>• 班次名称/编码：唯一标识<br>• 上下班时间：如09:00-18:00<br>• 弹性范围：允许迟到/早退的分钟数<br>• 工作天数：周一至周五 / 排班制<br>• 是否跨日：夜班可能跨天</div>'
-    + '<div class="prd-note"><div class="prd-note-title">绑定优先级</div>个人绑定 > 部门绑定 > 默认班次<br>• 优先级高的覆盖低的<br>• 可按日期单独设置例外班次</div>'
-    + '<div class="prd-note"><div class="prd-note-title">标准班次模板</div>• 标准班次：09:00-18:00 ±15min<br>• 弹性班次：09:00-18:00 ±60min<br>• 早班：07:00-15:00 ±10min<br>• 中班：15:00-23:00 ±10min<br>• 夜班：23:00-07:00 ±10min（跨日）</div>',
-
-    special: '<div class="prd-note"><div class="prd-note-title">模块定位</div>特殊人群管理，为特定员工群体（哺乳/孕期/工伤/残疾/高管/外派等）设置专属打卡规则，系统自动应用差异化考勤策略。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">特殊人群类型</div>• <span class="highlight">哺乳</span>：每日额外增加60分钟哺乳假，上班可晚到30分钟，下班可早退30分钟<br>• <span class="highlight">孕期</span>：禁止安排夜班，允许弹性上下班（±1小时），每月可申请2天产检假<br>• <span class="highlight">工伤</span>：工伤期间免打卡，按正常出勤计算，需提供医院证明<br>• <span class="highlight">残疾</span>：可申请远程办公，打卡位置放宽至5公里范围<br>• <span class="highlight">高管</span>：免固定班次考勤，按月提交工作报告即可<br>• <span class="highlight">外派</span>：按当地时区打卡，需绑定GPS定位验证</div>'
-    + '<div class="prd-note"><div class="prd-note-title">操作说明</div>• 创建人群组：选择人群类型 → 填写打卡规则 → 添加成员<br>• 成员管理：支持批量导入/移除<br>• 规则调整：可随时修改打卡规则，修改后即时生效<br>• 状态控制：启用/停用人群组，停用时成员恢复常规考勤规则</div>'
-    + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 考勤明细自动识别特殊人群身份<br>• 月度汇总统计时排除特殊规则影响<br>• 审批流程自动关联特殊人群规则（如孕期产检假无需扣减年假）</div>',
-
-    apply: '<div class="prd-note"><div class="prd-note-title">模块定位</div>统一管理5种申请类型：请假、出差、加班、补卡、外勤，每种类型有不同的表单字段和审批流程。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">5种申请类型</div>• <span class="highlight">请假</span>：选择假期类型（年休假/病假/事假等），自动扣减余额<br>• <span class="highlight">出差</span>：填写地点、事由、交通方式、预计费用<br>• <span class="highlight">加班</span>：区分工作日/休息日/节假日，影响加班费计算<br>• <span class="highlight">补卡</span>：忘记打卡时补充记录<br>• <span class="highlight">外勤</span>：外出办公，不计入迟到</div>'
-    + '<div class="prd-note"><div class="prd-note-title">审批流程</div>申请人提交 → 直属上级审批 → HR备案 → 生效<br>• 请假>3天需部门负责人审批<br>• 出差需财务确认预算<br>• 加班需提前申请（特殊情况可事后补）</div>'
-    + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 请假通过后自动扣减假期余额<br>• 加班通过后计入工时统计<br>• 出差期间不计迟到/早退<br>• 补卡通过后修正考勤状态</div>',
-
-    leave: '<div class="prd-note"><div class="prd-note-title">模块定位</div>假期额度管理，维护每位员工的各类假期余额（应休/已休/剩余），支持批量初始化和手动调整。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">10种假期类型</div>年休假、病假、事假、婚假、产假、陪产假、丧假、调休假、育儿假、工伤假</div>'
-    + '<div class="prd-note"><div class="prd-note-title">年假规则</div>• 司龄<1年：5天<br>• 1年≤司龄<10年：7天<br>• 10年≤司龄<20年：10天<br>• 司龄≥20年：15天<br>• 每年1月1日自动刷新</div>'
-    + '<div class="prd-note"><div class="prd-note-title">额度管理</div>• 批量初始化：每年初为全员生成新年度假额<br>• 手动调整：HR可因特殊情况增减额度<br>• 过期处理：年假当年未用完可结转至次年3月底</div>',
-
-    daily: '<div class="prd-note"><div class="prd-note-title">模块定位</div>每日考勤明细展示，基于打卡数据和班次规则计算每位员工每天的考勤状态。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">展示字段</div>工号、姓名、部门、日期、星期、班次、应上下班时间、实际上下班时间、打卡来源、考勤状态、迟到/早退分钟、工时、数据状态</div>'
-    + '<div class="prd-note"><div class="prd-note-title">状态计算规则</div>• <span class="highlight">正常</span>：在弹性范围内打卡<br>• <span class="highlight">迟到</span>：上班打卡晚于规定时间+弹性范围<br>• <span class="highlight">早退</span>：下班打卡早于规定时间-弹性范围<br>• <span class="highlight">旷工</span>：全天无打卡且无请假/出差记录<br>• <span class="highlight">请假/出差/加班/外勤</span>：有对应审批通过的申请</div>'
-    + '<div class="prd-note"><div class="prd-note-title">筛选条件</div>日期、部门、考勤状态、数据状态（系统计算/已修正）</div>',
-
-    summary: '<div class="prd-note"><div class="prd-note-title">模块定位</div>月度考勤汇总统计，聚合每位员工当月的出勤、迟到、请假、加班等数据，确认后推送至薪酬模块。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">汇总字段</div>应出勤天数、实际出勤天数、迟到次数/分钟、早退次数、旷工天数、请假天数、出差天数、加班时长、修正次数</div>'
-    + '<div class="prd-note"><div class="prd-note-title">确认锁定流程</div>HR核对数据 → 点击"确认锁定" → 状态变为"已锁定" → 自动推送至薪酬模块<br>• 锁定后不可再修改该月数据<br>• 如需修改需先解锁（需HR总监权限）</div>'
-    + '<div class="prd-note"><div class="prd-note-title">报表类型</div>• 个人月度考勤表<br>• 部门月度汇总表<br>• 公司整体考勤概览<br>• 异常人员清单</div>',
-
-    correct: '<div class="prd-note"><div class="prd-note-title">模块定位</div>考勤数据修正管理，允许HR对系统计算的考勤结果进行人工修正，所有修正永久记录至审计日志。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">修正权限</div>• HR专员：可修正本部门员工<br>• HR主管：可修正全公司<br>• 修正需填写备案原因（必填）<br>• 单次修正超过3条需主管二次确认</div>'
-    + '<div class="prd-note"><div class="prd-note-title">操作流程</div>选择员工和日期 → 查看当前状态 → 选择修改后状态/时间 → 填写备案原因 → 提交修正 → 记录至审计日志</div>'
-    + '<div class="prd-note"><div class="prd-note-title">痕迹记录</div>每次修正记录：操作人、操作时间、修改前状态/时间、修改后状态/时间、备案原因、IP地址<br>• 支持撤销修正（恢复至修正前状态）<br>• 撤销同样记录至审计日志</div>'
-    + '<div class="prd-note"><div class="prd-note-title">数据优先级规则</div><span class="highlight">核心规则</span>：修正后数据 > 审批通过的申请 > 原始打卡数据<br>• 修正后的考勤状态优先用于月度汇总<br>• 修正不影响原始打卡记录的保存</div>',
-
-    audit: '<div class="prd-note"><div class="prd-note-title">模块定位</div>审计日志记录所有考勤相关操作，包括数据修正、确认锁定、解锁、导出、手动拉取、额度调整等，保障数据安全可追溯。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">审计日志字段</div>操作人工号、操作人姓名、操作时间、操作类型、操作对象、操作结果（成功/失败）、IP地址</div>'
-    + '<div class="prd-note"><div class="prd-note-title">安全规则</div>• 日志不可删除或修改<br>• 保留期限：永久<br>• 仅HR总监及以上可查看完整日志<br>• 敏感操作（如批量修正）触发额外告警</div>'
-    + '<div class="prd-note"><div class="prd-note-title">备份策略</div>• 实时写入数据库<br>• 每日增量备份<br>• 每月全量备份至冷存储<br>• 支持按时间范围导出</div>'
-  };
-  return subPrd[currentAttSub] || '';
 }
 
 // ============ INIT ============
