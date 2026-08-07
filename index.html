@@ -141,6 +141,23 @@ tr:hover { background: #f8fafc; }
 .att-sub-tab { padding: 8px 14px; cursor: pointer; font-size: 13px; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
 .att-sub-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; font-weight: 600; }
 .att-sub-tab:hover { color: #3b82f6; background: #f0f9ff; }
+.flow-steps { display:flex;align-items:center;gap:0;margin:20px 0;padding:16px 20px;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.05);overflow-x:auto; }
+.flow-step { display:flex;flex-direction:column;align-items:center;gap:6px;min-width:90px; }
+.flow-step .step-circle { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;background:#d1d5db; }
+.flow-step .step-circle.done { background:#22c55e; }
+.flow-step .step-circle.active { background:#3b82f6;animation:pulse 2s infinite; }
+.flow-step .step-circle.pending { background:#d1d5db; }
+.flow-step .step-label { font-size:12px;color:#6b7280;text-align:center;white-space:nowrap; }
+.flow-step .step-label.active { color:#3b82f6;font-weight:600; }
+.flow-arrow { font-size:18px;color:#d1d5db;margin:0 2px;flex-shrink:0; }
+.flow-arrow.done { color:#22c55e; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.4);} 50%{box-shadow:0 0 0 8px rgba(59,130,246,0);} }
+.grade-bar { display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px; }
+.grade-bar .bar-label { width:24px;font-weight:700;text-align:center; }
+.grade-bar .bar-track { flex:1;height:24px;background:#f3f4f6;border-radius:4px;position:relative;overflow:hidden; }
+.grade-bar .bar-fill { height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;color:#fff;font-size:11px;font-weight:600;min-width:30px;transition:width .5s; }
+.grade-bar .bar-target { position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:1; }
+.grade-bar .bar-value { width:70px;text-align:right;font-size:12px;color:#6b7280; }
 </style>
 </head>
 <body>
@@ -203,6 +220,7 @@ function genPhone() { return '1'+randInt(30,99)+String(randInt(10000000,99999999
 
 var onboardData=[], regularData=[], transferData=[], renewData=[], resignData=[], rewardData=[], tagData=[], employeeData=[];
 var punchData=[], shiftData=[], leaveData=[], leaveBalanceData=[], dailyAttData=[], summaryData=[], correctionData=[], auditLogData=[], specialGroupData=[];
+var perfIndicatorData=[], perfPlanData=[], perfAssessData=[];
 
 function initData() {
   var i;
@@ -346,6 +364,80 @@ function initData() {
     }
     specialGroupData.push({ id:i+1, groupName:sgType.type+'组-'+String(i+1), groupType:sgType.type, rule:sgType.rule, status:Math.random()>0.2?'启用':'停用', memberCount:memberCount, members:members, createTime:randDate(2024,2025), creator:rand(NAMES)+'(HR)' });
   }
+  // ---- 绩效管理 mock data ----
+  var perfIndNames = [
+    {name:'销售额达成率',type:'定量',weight:25,target:'季度销售额≥500万'},
+    {name:'客户满意度',type:'定量',weight:15,target:'满意度评分≥4.5/5'},
+    {name:'项目交付准时率',type:'定量',weight:20,target:'≥90%项目按期交付'},
+    {name:'代码质量评分',type:'定量',weight:15,target:'代码评审均分≥85'},
+    {name:'bug修复率',type:'定量',weight:10,target:'严重bug修复率≥95%'},
+    {name:'团队协作',type:'定性',weight:10,target:'跨部门协作顺畅'},
+    {name:'创新能力',type:'定性',weight:10,target:'提出≥2项改进方案'},
+    {name:'学习能力',type:'定性',weight:5,target:'完成≥3门培训课程'},
+    {name:'领导力',type:'定性',weight:10,target:'团队满意度≥85%'},
+    {name:'成本控制',type:'定量',weight:15,target:'部门预算执行率≥90%'},
+    {name:'客户投诉率',type:'定量',weight:10,target:'投诉率≤0.5%'},
+    {name:'培训完成率',type:'定量',weight:10,target:'团队培训完成率100%'},
+    {name:'营收增长率',type:'定量',weight:30,target:'同比增长≥15%'},
+    {name:'新客开发数',type:'定量',weight:20,target:'新增客户≥20家'},
+    {name:'回款率',type:'定量',weight:20,target:'回款率≥95%'},
+    {name:'市场活动ROI',type:'定量',weight:15,target:'ROI≥300%'},
+    {name:'品牌曝光量',type:'定量',weight:15,target:'月均曝光≥100万'},
+    {name:'系统可用性',type:'定量',weight:30,target:'SLA≥99.9%'},
+    {name:'需求响应时效',type:'定量',weight:20,target:'平均响应≤2小时'},
+    {name:'合规管理',type:'定性',weight:15,target:'零合规事件'}
+  ];
+  var indStatuses = ['已备案','已备案','已备案','待审核','草稿','已驳回'];
+  for(i=0;i<perfIndNames.length;i++){
+    var ind = perfIndNames[i];
+    perfIndicatorData.push({ id:i+1, period:rand(['2026年Q1','2026年Q2','2025年Q4']), name:ind.name, type:ind.type, weight:ind.weight, target:ind.target, standard:'卓越:≥120%完成\n优秀:100%-119%\n达标:80%-99%\n待改进:60%-79%\n未达标:<60%', status:rand(indStatuses), submitter:rand(NAMES), submitDate:randDate(2025,2026) });
+  }
+  perfPlanData = [
+    {id:1,name:'2026年Q1季度绩效考核',period:'2026年Q1',mode:'KPI',scope:'全公司',empCount:1655,startDate:'2026-03-01',endDate:'2026-03-31',selfDeadline:'2026-04-05',superDeadline:'2026-04-10',approverDeadline:'2026-04-15',hrDeadline:'2026-04-20',status:'已完成',creator:'李经理(HR)'},
+    {id:2,name:'2026年Q2季度绩效考核',period:'2026年Q2',mode:'KPI',scope:'全公司',empCount:1655,startDate:'2026-06-01',endDate:'2026-06-30',selfDeadline:'2026-07-05',superDeadline:'2026-07-10',approverDeadline:'2026-07-15',hrDeadline:'2026-07-20',status:'HR复核中',creator:'李经理(HR)'},
+    {id:3,name:'2025年度绩效考核',period:'2025年度',mode:'BSC',scope:'全公司',empCount:1620,startDate:'2026-01-05',endDate:'2026-01-31',selfDeadline:'2026-02-05',superDeadline:'2026-02-10',approverDeadline:'2026-02-15',hrDeadline:'2026-02-28',status:'已归档',creator:'王总监(HR)'},
+    {id:4,name:'2026年Q1技术研发专项考核',period:'2026年Q1',mode:'OKR',scope:'技术研发部',empCount:320,startDate:'2026-03-01',endDate:'2026-03-31',selfDeadline:'2026-04-03',superDeadline:'2026-04-08',approverDeadline:'2026-04-12',hrDeadline:'2026-04-18',status:'已完成',creator:'李经理(HR)'}
+  ];
+  var assessStatuses = ['已归档','已归档','已确认','已确认','待确认','HR复核中','HR复核中','上上级审批中','上级评价中','员工自评中'];
+  var gradeTarget = {S:8,A:20,B:42,C:20,D:10};
+  var gradePool = [];
+  var gk,gc;
+  for(gk in gradeTarget) { for(gc=0;gc<gradeTarget[gk];gc++) gradePool.push(gk); }
+  for(i=0;i<55;i++){
+    var aName = rand(NAMES);
+    var aDept = rand(DEPTS);
+    var aPos = rand(POSITIONS);
+    var aGrade = gradePool[i % gradePool.length];
+    var aStatus = assessStatuses[i % assessStatuses.length];
+    var aPlan = rand(perfPlanData);
+    var nInd = randInt(3,5);
+    var indicators = [];
+    var totalW = 0;
+    for(var j=0;j<nInd;j++){
+      var w = j<nInd-1 ? randInt(10,35) : 100-totalW;
+      totalW += w;
+      var iType = Math.random()>0.4?'定量':'定性';
+      var iScore, iSelfScore;
+      if(aGrade==='S'){iScore=randInt(90,100);iSelfScore=randInt(85,100);}
+      else if(aGrade==='A'){iScore=randInt(80,89);iSelfScore=randInt(75,95);}
+      else if(aGrade==='B'){iScore=randInt(60,79);iSelfScore=randInt(55,85);}
+      else if(aGrade==='C'){iScore=randInt(40,59);iSelfScore=randInt(40,70);}
+      else{iScore=randInt(10,39);iSelfScore=randInt(20,55);}
+      var grades5 = ['卓越','优秀','达标','待改进','未达标'];
+      var iGrade = iScore>=90?grades5[0]:iScore>=80?grades5[1]:iScore>=60?grades5[2]:iScore>=40?grades5[3]:grades5[4];
+      indicators.push({ name:rand(perfIndNames).name, type:iType, weight:w, target:iType==='定量'?rand(['完成率≥100%','月均≥50万','误差率≤1%','响应≤2h']):'表现描述', selfScore:iSelfScore, superiorScore:iScore, grade:iGrade, selfComment:'本期基本完成目标，在'+rand(['客户沟通','技术方案','项目管理','团队协作'])+'方面表现'+(iScore>=80?'突出':'一般')+'。', superiorComment:'该员工在本考核周期内'+(iScore>=80?'表现优秀，超额完成目标':'基本达标，部分指标仍有提升空间')+'。' });
+    }
+    var totalScore = 0;
+    for(j=0;j<indicators.length;j++) totalScore += indicators[j].superiorScore * indicators[j].weight / 100;
+    totalScore = Math.round(totalScore*10)/10;
+    var initGrade = totalScore>=90?'S':totalScore>=80?'A':totalScore>=60?'B':totalScore>=40?'C':'D';
+    var flowStep = aStatus==='已归档'?7:aStatus==='已确认'?6:aStatus==='HR复核中'?5:aStatus==='上上级审批中'?4:aStatus==='上级评价中'?3:aStatus==='员工自评中'?2:1;
+    var commentStatus = aStatus==='已归档'?'已确认':aStatus==='已确认'?'已编辑':flowStep>=5?'已生成':flowStep>=4?'已生成':'待生成';
+    var commentContent = '【总体评价】该员工在本考核周期综合得分'+totalScore+'分，等级'+aGrade+'。'+(totalScore>=80?'整体表现优秀，多项指标超额完成。':'整体表现达标，部分指标需加强。')+'【指标表现】';
+    for(j=0;j<indicators.length;j++) commentContent += indicators[j].name+'（权重'+indicators[j].weight+'%）：得分'+indicators[j].superiorScore+'，'+indicators[j].grade+'；';
+    commentContent += '【改进建议】'+(totalScore>=80?'继续保持高标准工作状态，在创新方面寻求突破。':'建议加强时间管理，提升核心业务指标达成率。');
+    perfAssessData.push({ id:i+1, empNo:'EMP'+String(1000+i), name:aName, dept:aDept, pos:aPos, planId:aPlan.id, planName:aPlan.name, period:aPlan.period, indicators:indicators, totalScore:totalScore, initialGrade:initGrade, finalGrade:aGrade, selfScore:Math.round(indicators.reduce(function(s,x){return s+x.selfScore*x.weight/100;},0)*10)/10, status:aStatus, flowStep:flowStep, commentStatus:commentStatus, commentContent:commentContent, commentVersions:[{version:1,content:commentContent,editor:'系统(AI)',time:randDate(2026,2026)+' '+String(randInt(9,17)).padStart(2,'0')+':'+String(randInt(10,59)).padStart(2,'0')}], adjusted:Math.random()>0.8, adjustReason:Math.random()>0.8?'团队整体分布偏移，微调等级':'', confirmDeadline:'2026-07-25' });
+  }
 }
 initData();
 
@@ -363,6 +455,14 @@ var NAV_GROUPS = [
   ]},
   { name:'考勤管理', icon:'⏰', collapsed:false, modules:[
     { key:'attendance', name:'考勤管理', icon:'⏰' }
+  ]},
+  { name:'绩效管理', icon:'📊', collapsed:false, modules:[
+    { key:'perf_indicator', name:'指标备案', icon:'📋' },
+    { key:'perf_plan', name:'考核计划', icon:'📅' },
+    { key:'perf_myassess', name:'我的考核', icon:'📝' },
+    { key:'perf_evaluate', name:'上级评价', icon:'✍️' },
+    { key:'perf_result', name:'结果管理', icon:'📊' },
+    { key:'perf_comment', name:'综合评语', icon:'💬' }
   ]}
 ];
 var currentModule = 'onboard';
@@ -493,12 +593,12 @@ function getPageData(arr, key) {
 
 // ============ STATUS BADGE HELPER ============
 function getStatusBadge(s) {
-  if(['待办理','待评估','待审批','待签署','待交接'].indexOf(s)>=0) return 'badge-yellow';
-  if(['办理中','审批中','签署中','原部门已批','新部门已批','交接完成'].indexOf(s)>=0) return 'badge-blue';
+  if(['待办理','待评估','待审批','待签署','待交接','待审核','待生成'].indexOf(s)>=0) return 'badge-yellow';
+  if(['办理中','审批中','签署中','原部门已批','新部门已批','交接完成','员工自评中','上级评价中','上上级审批中','HR复核中','已编辑'].indexOf(s)>=0) return 'badge-blue';
   if(['审核中','合同签署中'].indexOf(s)>=0) return 'badge-purple';
-  if(['合同已完成','已通过','已完成','已生效','已归档','面谈完成','离职审批已通过'].indexOf(s)>=0) return 'badge-green';
-  if(['已失效','放弃入职','已驳回','已辞退','不续签','已离职'].indexOf(s)>=0) return 'badge-red';
-  if(['已延长'].indexOf(s)>=0) return 'badge-gray';
+  if(['合同已完成','已通过','已完成','已生效','已归档','面谈完成','离职审批已通过','已确认','已备案','已生成','已锁定'].indexOf(s)>=0) return 'badge-green';
+  if(['已失效','放弃入职','已驳回','已辞退','不续签','已离职','已驳回'].indexOf(s)>=0) return 'badge-red';
+  if(['已延长','草稿','停用'].indexOf(s)>=0) return 'badge-gray';
   return 'badge-gray';
 }
 
@@ -515,6 +615,12 @@ function renderPage() {
     case 'tag': c.innerHTML = renderTag(); break;
     case 'employee': c.innerHTML = renderEmployee(); break;
     case 'attendance': c.innerHTML = renderAttendance(); break;
+    case 'perf_indicator': c.innerHTML = renderPerfIndicator(); break;
+    case 'perf_plan': c.innerHTML = renderPerfPlan(); break;
+    case 'perf_myassess': c.innerHTML = renderPerfMyAssess(); break;
+    case 'perf_evaluate': c.innerHTML = renderPerfEvaluate(); break;
+    case 'perf_result': c.innerHTML = renderPerfResult(); break;
+    case 'perf_comment': c.innerHTML = renderPerfComment(); break;
   }
 }
 
@@ -1594,6 +1700,463 @@ function confirmLock(id) {
   });
 }
 
+// ============ 绩效管理 MODULE ============
+
+// ---- 6.1 指标备案 ----
+function renderPerfIndicator() {
+  var rows = getPageData(perfIndicatorData, 'perf_indicator');
+  var tableRows = rows.map(function(r) {
+    var ops = '<span class="op-link" onclick="openIndDetail('+r.id+')">查看</span>';
+    ops += '<span class="op-link'+(r.status==='草稿'||r.status==='已驳回'?'':' disabled')+'" onclick="submitIndicator('+r.id+')">提交备案</span>';
+    ops += '<span class="op-link'+(r.status==='已备案'?'':' disabled')+'" onclick="showToast(\'已复制指标模板\')">复制</span>';
+    return '<tr><td>'+r.period+'</td><td>'+r.name+'</td><td><span class="badge '+(r.type==='定量'?'badge-blue':'badge-purple')+'">'+r.type+'</span></td><td>'+r.weight+'%</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+r.target+'">'+r.target+'</td><td>'+r.submitter+'</td><td>'+r.submitDate+'</td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td style="white-space:nowrap">'+ops+'</td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title">指标备案管理</h1><button class="btn-primary" onclick="openIndForm()">+ 新增指标</button></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>考核周期</label><select><option value="">全部</option><option>2026年Q1</option><option>2026年Q2</option><option>2025年Q4</option></select></div>'
+  + '<div class="filter-item"><label>指标类型</label><select><option value="">全部</option><option>定量</option><option>定性</option></select></div>'
+  + '<div class="filter-item"><label>备案状态</label><select><option value="">全部</option><option>已备案</option><option>待审核</option><option>草稿</option><option>已驳回</option></select></div>'
+  + '<div class="filter-item"><label>指标名称</label><input placeholder="模糊搜索"></div>'
+  + '<button class="btn-primary btn-sm">查询</button>'
+  + '</div>'
+  + pageSizeBar('perf_indicator')
+  + '<div class="table-container"><table><thead><tr><th>考核周期</th><th>指标名称</th><th>指标类型</th><th>权重</th><th>目标值</th><th>提交人</th><th>提交日期</th><th>状态</th><th>操作</th></tr></thead><tbody>'
+  + tableRows + '</tbody></table></div>'
+  + renderPagination('perf_indicator', perfIndicatorData.length);
+}
+
+function openIndDetail(id) {
+  var r = perfIndicatorData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">指标详情 - '+r.name+'</h2>'
+  + '<div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">考核周期</div><div class="info-value">'+r.period+'</div></div>'
+  + '<div class="info-item"><div class="info-label">指标名称</div><div class="info-value">'+r.name+'</div></div>'
+  + '<div class="info-item"><div class="info-label">指标类型</div><div class="info-value"><span class="badge '+(r.type==='定量'?'badge-blue':'badge-purple')+'">'+r.type+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">指标权重</div><div class="info-value">'+r.weight+'%</div></div>'
+  + '<div class="info-item"><div class="info-label">目标值</div><div class="info-value">'+r.target+'</div></div>'
+  + '<div class="info-item"><div class="info-label">备案状态</div><div class="info-value"><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">提交人</div><div class="info-value">'+r.submitter+'</div></div>'
+  + '<div class="info-item"><div class="info-label">提交日期</div><div class="info-value">'+r.submitDate+'</div></div>'
+  + '</div>'
+  + '<div style="margin-top:16px;"><div class="info-label">评分标准说明</div><div class="info-value" style="white-space:pre-line;margin-top:6px;background:#f8fafc;padding:12px;border-radius:6px;font-size:13px;line-height:1.8;">'+r.standard+'</div></div>'
+  + '<div style="margin-top:16px;padding:12px;background:#eff6ff;border-radius:6px;font-size:12px;color:#1e40af;"><b>定量指标评分规则：</b>完成率≥120%→95-100分 | 100%-119%→85-94分 | 80%-99%→70-84分 | 60%-79%→50-69分 | <60%→0-49分<br><b>定性指标评分规则：</b>卓越→95分 | 优秀→85分 | 达标→70分 | 待改进→50分 | 未达标→30分</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()">关闭</button></div>';
+  openModal(html, true);
+}
+
+function submitIndicator(id) {
+  var r = perfIndicatorData.find(function(x){return x.id===id;});
+  if(!r) return;
+  r.status = '待审核';
+  renderPage();
+  showToast('指标已提交备案审核');
+}
+
+function openIndForm() {
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">新增考核指标</h2>'
+  + '<div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">考核周期 <span style="color:#ef4444">*</span></div><select data-required class="filter-sel"><option value="">请选择</option><option>2026年Q2</option><option>2026年Q1</option></select></div>'
+  + '<div class="info-item"><div class="info-label">指标名称 <span style="color:#ef4444">*</span></div><input data-required placeholder="最多100字" maxlength="100"></div>'
+  + '<div class="info-item"><div class="info-label">指标类型 <span style="color:#ef4444">*</span></div><select data-required><option value="">请选择</option><option>定量指标</option><option>定性指标</option></select></div>'
+  + '<div class="info-item"><div class="info-label">指标权重(%) <span style="color:#ef4444">*</span></div><input data-required type="number" min="5" max="80" placeholder="5%-80%"></div>'
+  + '<div class="info-item"><div class="info-label">目标值 <span style="color:#ef4444">*</span></div><input data-required placeholder="定量填数值范围，定性填描述"></div>'
+  + '<div class="info-item"><div class="info-label">评分标准说明</div><textarea rows="3" placeholder="各档位的判断标准" style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>'
+  + '</div>'
+  + '<div style="margin-top:16px;padding:12px;background:#fef9c3;border-radius:6px;font-size:12px;color:#854d0e;">提示：所有指标权重之和必须等于100%。仅"已备案"状态的指标才能进入评分环节。</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="closeModal();showToast(\'指标已保存为草稿\')">保存草稿</button> <button class="btn-primary" onclick="closeModal();showToast(\'指标已提交备案审核\')" style="background:#16a34a;">提交备案</button></div>';
+  openModal(html, true);
+}
+
+// ---- 6.2 考核计划 ----
+function renderPerfPlan() {
+  var rows = getPageData(perfPlanData, 'perf_plan');
+  var tableRows = rows.map(function(r) {
+    var ops = '<span class="op-link" onclick="openPlanDetail('+r.id+')">查看</span>';
+    ops += '<span class="op-link'+(r.status==='已完成'||r.status==='已归档'?' disabled':'')+'" onclick="openPlanDetail('+r.id+')">配置</span>';
+    ops += '<span class="op-link" onclick="showToast(\'已导出考核计划\')">导出</span>';
+    return '<tr><td>'+r.name+'</td><td>'+r.period+'</td><td><span class="badge '+(r.mode==='KPI'?'badge-blue':r.mode==='OKR'?'badge-purple':'badge-green')+'">'+r.mode+'</span></td><td>'+r.scope+'</td><td>'+r.empCount+'人</td><td>'+r.startDate+' ~ '+r.endDate+'</td><td>'+r.hrDeadline+'</td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td style="white-space:nowrap">'+ops+'</td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title">考核计划管理</h1><button class="btn-primary" onclick="openPlanForm()">+ 新建计划</button></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>考核周期</label><select><option value="">全部</option><option>2026年Q1</option><option>2026年Q2</option><option>2025年度</option></select></div>'
+  + '<div class="filter-item"><label>考核模式</label><select><option value="">全部</option><option>KPI</option><option>OKR</option><option>BSC</option></select></div>'
+  + '<div class="filter-item"><label>状态</label><select><option value="">全部</option><option>HR复核中</option><option>已完成</option><option>已归档</option></select></div>'
+  + '<button class="btn-primary btn-sm">查询</button>'
+  + '</div>'
+  + pageSizeBar('perf_plan')
+  + '<div class="table-container"><table><thead><tr><th>计划名称</th><th>考核周期</th><th>模式</th><th>范围</th><th>参与人数</th><th>考核期间</th><th>HR截止日</th><th>状态</th><th>操作</th></tr></thead><tbody>'
+  + tableRows + '</tbody></table></div>'
+  + renderPagination('perf_plan', perfPlanData.length);
+}
+
+function openPlanDetail(id) {
+  var r = perfPlanData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var steps = [
+    {label:'指标备案',status:'done'},{label:'考核配置',status:'done'},{label:'员工自评',status:r.selfDeadline<'2026-07-01'?'done':'pending'},
+    {label:'上级评价',status:r.superDeadline<'2026-07-01'?'done':'pending'},{label:'上上级审批',status:r.approverDeadline<'2026-07-01'?'done':'pending'},
+    {label:'HR复核',status:r.status==='已完成'||r.status==='已归档'?'done':'active'},{label:'结果确认',status:r.status==='已完成'||r.status==='已归档'?'done':'pending'},
+    {label:'归档',status:r.status==='已归档'?'done':'pending'}
+  ];
+  var flowHtml = '<div class="flow-steps">';
+  steps.forEach(function(s,i){
+    flowHtml += '<div class="flow-step"><div class="step-circle '+s.status+'">'+(i+1)+'</div><div class="step-label'+(s.status==='active'?' active':'')+'">'+s.label+'</div></div>';
+    if(i<steps.length-1) flowHtml += '<div class="flow-arrow'+(s.status==='done'?' done':'')+'">→</div>';
+  });
+  flowHtml += '</div>';
+  var planCount = perfAssessData.filter(function(a){return a.planId===id;}).length;
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">考核计划详情 - '+r.name+'</h2>'
+  + flowHtml
+  + '<div class="info-grid" style="margin-top:16px;">'
+  + '<div class="info-item"><div class="info-label">计划名称</div><div class="info-value">'+r.name+'</div></div>'
+  + '<div class="info-item"><div class="info-label">考核周期</div><div class="info-value">'+r.period+'</div></div>'
+  + '<div class="info-item"><div class="info-label">考核模式</div><div class="info-value"><span class="badge '+(r.mode==='KPI'?'badge-blue':r.mode==='OKR'?'badge-purple':'badge-green')+'">'+r.mode+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">考核范围</div><div class="info-value">'+r.scope+'</div></div>'
+  + '<div class="info-item"><div class="info-label">参与人数</div><div class="info-value">'+r.empCount+'人</div></div>'
+  + '<div class="info-item"><div class="info-label">当前进度</div><div class="info-value">已完成 '+planCount+' 条考核记录</div></div>'
+  + '<div class="info-item"><div class="info-label">考核期间</div><div class="info-value">'+r.startDate+' ~ '+r.endDate+'</div></div>'
+  + '<div class="info-item"><div class="info-label">状态</div><div class="info-value"><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></div></div>'
+  + '</div>'
+  + '<div style="margin-top:16px;"><h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">时间节点配置</h3>'
+  + '<div class="table-container"><table><thead><tr><th>环节</th><th>截止时间</th><th>状态</th></tr></thead><tbody>'
+  + '<tr><td>员工自评截止</td><td>'+r.selfDeadline+'</td><td><span class="badge '+(r.selfDeadline<'2026-07-01'?'badge-green':'badge-yellow')+'">'+(r.selfDeadline<'2026-07-01'?'已截止':'进行中')+'</span></td></tr>'
+  + '<tr><td>上级评价截止</td><td>'+r.superDeadline+'</td><td><span class="badge '+(r.superDeadline<'2026-07-01'?'badge-green':'badge-yellow')+'">'+(r.superDeadline<'2026-07-01'?'已截止':'进行中')+'</span></td></tr>'
+  + '<tr><td>上上级审批截止</td><td>'+r.approverDeadline+'</td><td><span class="badge '+(r.approverDeadline<'2026-07-01'?'badge-green':'badge-yellow')+'">'+(r.approverDeadline<'2026-07-01'?'已截止':'进行中')+'</span></td></tr>'
+  + '<tr><td>HR复核截止</td><td>'+r.hrDeadline+'</td><td><span class="badge '+(r.hrDeadline<'2026-07-01'?'badge-green':'badge-yellow')+'">'+(r.hrDeadline<'2026-07-01'?'已截止':'进行中')+'</span></td></tr>'
+  + '</tbody></table></div></div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()">关闭</button></div>';
+  openModal(html, true);
+}
+
+function openPlanForm() {
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">新建考核计划</h2>'
+  + '<div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">计划名称 <span style="color:#ef4444">*</span></div><input data-required placeholder="如：2026年Q2季度绩效考核"></div>'
+  + '<div class="info-item"><div class="info-label">考核周期 <span style="color:#ef4444">*</span></div><select data-required><option value="">请选择</option><option>2026年Q2</option><option>2026年Q3</option><option>2026年度</option></select></div>'
+  + '<div class="info-item"><div class="info-label">考核模式 <span style="color:#ef4444">*</span></div><select data-required><option value="">请选择</option><option>KPI</option><option>OKR</option><option>BSC</option></select></div>'
+  + '<div class="info-item"><div class="info-label">考核范围 <span style="color:#ef4444">*</span></div><select data-required><option value="">请选择</option><option>全公司</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="info-item"><div class="info-label">考核开始日期 <span style="color:#ef4444">*</span></div><input data-required type="date"></div>'
+  + '<div class="info-item"><div class="info-label">考核结束日期 <span style="color:#ef4444">*</span></div><input data-required type="date"></div>'
+  + '<div class="info-item"><div class="info-label">自评截止日</div><input type="date"></div>'
+  + '<div class="info-item"><div class="info-label">上级评价截止日</div><input type="date"></div>'
+  + '<div class="info-item"><div class="info-label">审批截止日</div><input type="date"></div>'
+  + '<div class="info-item"><div class="info-label">HR复核截止日</div><input type="date"></div>'
+  + '</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="closeModal();showToast(\'考核计划已创建\')">创建计划</button></div>';
+  openModal(html, true);
+}
+
+// ---- 6.3 我的考核（员工视角 + 流程视图）----
+function renderPerfMyAssess() {
+  var rows = getPageData(perfAssessData, 'perf_myassess');
+  var tableRows = rows.map(function(r) {
+    var ops = '<span class="op-link" onclick="openMyAssessDetail('+r.id+')">查看</span>';
+    if(r.flowStep===2) ops += '<span class="op-link" onclick="openSelfEval('+r.id+')">去自评</span>';
+    if(r.status==='待确认') ops += '<span class="op-link" onclick="confirmResult('+r.id+')">确认结果</span>';
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.planName+'</td><td>'+r.period+'</td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td>'+r.confirmDeadline+'</td><td style="white-space:nowrap">'+ops+'</td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title">我的考核</h1><div></div></div>'
+  + '<div style="background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);">'
+  + '<div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:12px;">考核流程进度</div>'
+  + '<div class="flow-steps" style="margin:0;box-shadow:none;padding:8px 0;">'
+  + '<div class="flow-step"><div class="step-circle done">1</div><div class="step-label">指标备案</div></div><div class="flow-arrow done">→</div>'
+  + '<div class="flow-step"><div class="step-circle done">2</div><div class="step-label">考核配置</div></div><div class="flow-arrow done">→</div>'
+  + '<div class="flow-step"><div class="step-circle active">3</div><div class="step-label active">员工自评</div></div><div class="flow-arrow">→</div>'
+  + '<div class="flow-step"><div class="step-circle pending">4</div><div class="step-label">上级评价</div></div><div class="flow-arrow">→</div>'
+  + '<div class="flow-step"><div class="step-circle pending">5</div><div class="step-label">上上级审批</div></div><div class="flow-arrow">→</div>'
+  + '<div class="flow-step"><div class="step-circle pending">6</div><div class="step-label">HR复核</div></div><div class="flow-arrow">→</div>'
+  + '<div class="flow-step"><div class="step-circle pending">7</div><div class="step-label">结果确认</div></div><div class="flow-arrow">→</div>'
+  + '<div class="flow-step"><div class="step-circle pending">8</div><div class="step-label">归档</div></div>'
+  + '</div></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>考核计划</label><select><option value="">全部</option>'+perfPlanData.map(function(p){return '<option>'+p.name+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>考核状态</label><select><option value="">全部</option><option>员工自评中</option><option>上级评价中</option><option>上上级审批中</option><option>HR复核中</option><option>待确认</option><option>已确认</option><option>已归档</option></select></div>'
+  + '<button class="btn-primary btn-sm">查询</button>'
+  + '</div>'
+  + pageSizeBar('perf_myassess')
+  + '<div class="table-container"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>考核计划</th><th>周期</th><th>状态</th><th>确认截止</th><th>操作</th></tr></thead><tbody>'
+  + tableRows + '</tbody></table></div>'
+  + renderPagination('perf_myassess', perfAssessData.length);
+}
+
+function openMyAssessDetail(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var flowSteps = ['指标备案','考核配置','员工自评','上级评价','上上级审批','HR复核','结果确认','归档'];
+  var flowHtml = '<div class="flow-steps">';
+  for(var i=0;i<flowSteps.length;i++){
+    var st = i+1<r.flowStep?'done':i+1===r.flowStep?'active':'pending';
+    flowHtml += '<div class="flow-step"><div class="step-circle '+st+'">'+(i+1)+'</div><div class="step-label'+(st==='active'?' active':'')+'">'+flowSteps[i]+'</div></div>';
+    if(i<flowSteps.length-1) flowHtml += '<div class="flow-arrow'+(st==='done'?' done':'')+'">→</div>';
+  }
+  flowHtml += '</div>';
+  var indRows = r.indicators.map(function(ind){
+    var diff = Math.abs(ind.superiorScore - ind.selfScore);
+    return '<tr><td>'+ind.name+'</td><td><span class="badge '+(ind.type==='定量'?'badge-blue':'badge-purple')+'">'+ind.type+'</span></td><td>'+ind.weight+'%</td><td>'+ind.selfScore+'</td><td>'+ind.superiorScore+'</td><td>'+(diff>=20?'<span style="color:#ef4444;font-weight:600;">'+diff+'分 ⚠</span>':diff+'分')+'</td><td>'+ind.grade+'</td></tr>';
+  }).join('');
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">考核详情 - '+r.name+' ('+r.period+')</h2>'
+  + flowHtml
+  + '<div style="display:flex;gap:16px;margin:16px 0;">'
+  + '<div style="flex:1;background:#f0f9ff;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">自评得分</div><div style="font-size:24px;font-weight:700;color:#3b82f6;">'+r.selfScore+'</div></div>'
+  + '<div style="flex:1;background:#f0fdf4;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">综合得分</div><div style="font-size:24px;font-weight:700;color:#16a34a;">'+r.totalScore+'</div></div>'
+  + '<div style="flex:1;background:#fefce8;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">初始等级</div><div style="font-size:24px;font-weight:700;color:#ca8a04;">'+r.initialGrade+'</div></div>'
+  + '<div style="flex:1;background:#fdf2f8;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">最终等级</div><div style="font-size:24px;font-weight:700;color:#db2777;">'+r.finalGrade+'</div></div>'
+  + '</div>'
+  + '<h3 style="font-size:14px;font-weight:600;margin-bottom:10px;">指标评分明细</h3>'
+  + '<div class="table-container"><table><thead><tr><th>指标名称</th><th>类型</th><th>权重</th><th>自评分</th><th>上级评分</th><th>差异</th><th>档位</th></tr></thead><tbody>'+indRows+'</tbody></table></div>'
+  + (r.adjusted?'<div style="margin-top:12px;padding:10px;background:#fef2f2;border-radius:6px;font-size:12px;color:#991b1b;">⚠ 等级经调整：'+r.adjustReason+'</div>':'')
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()">关闭</button>'
+  + (r.status==='待确认'?' <button class="btn-primary" onclick="confirmResult('+r.id+');closeModal()">确认结果</button>':'')
+  + (r.status==='待确认'?' <button class="btn-danger" onclick="closeModal();showToast(\'申诉已提交\',\'error\')">申诉</button>':'')
+  + '</div>';
+  openModal(html, true);
+}
+
+function openSelfEval(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var indRows = r.indicators.map(function(ind,idx){
+    return '<tr><td>'+ind.name+'</td><td><span class="badge '+(ind.type==='定量'?'badge-blue':'badge-purple')+'">'+ind.type+'</span></td><td>'+ind.weight+'%</td><td>'+ind.target+'</td>'
+    + '<td><input type="number" min="0" max="100" value="'+ind.selfScore+'" style="width:70px;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;text-align:center;"></td>'
+    + '<td><select style="padding:4px;border:1px solid #d1d5db;border-radius:4px;"><option'+(ind.grade==='卓越'?' selected':'')+'>卓越</option><option'+(ind.grade==='优秀'?' selected':'')+'>优秀</option><option'+(ind.grade==='达标'?' selected':'')+'>达标</option><option'+(ind.grade==='待改进'?' selected':'')+'>待改进</option><option'+(ind.grade==='未达标'?' selected':'')+'>未达标</option></select></td>'
+    + '<td><textarea rows="2" style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;resize:vertical;">'+ind.selfComment+'</textarea></td></tr>';
+  }).join('');
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">员工自评 - '+r.name+' ('+r.period+')</h2>'
+  + '<div class="table-container"><table><thead><tr><th>指标名称</th><th>类型</th><th>权重</th><th>目标值</th><th>自评分</th><th>自评档位</th><th>自评说明</th></tr></thead><tbody>'+indRows+'</tbody></table></div>'
+  + '<div style="margin-top:12px;padding:10px;background:#eff6ff;border-radius:6px;font-size:12px;color:#1e40af;">提示：定量指标可根据完成率自动计算后微调（±5分），定性指标请选择档位后在可调范围内修改分值。所有指标必须完成自评后才能提交。</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-secondary" onclick="closeModal();showToast(\'草稿已保存\')">保存草稿</button> <button class="btn-primary" onclick="closeModal();showToast(\'自评已提交\')">提交自评</button></div>';
+  openModal(html, true);
+}
+
+function confirmResult(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  r.status = '已确认';
+  r.flowStep = 6;
+  renderPage();
+  showToast('考核结果已确认');
+}
+
+// ---- 6.4 上级评价（批量评分界面）----
+function renderPerfEvaluate() {
+  var rows = getPageData(perfAssessData, 'perf_evaluate');
+  var tableRows = rows.map(function(r) {
+    var ops = '<span class="op-link" onclick="openEvaluateModal('+r.id+')">评分</span>';
+    ops += '<span class="op-link" onclick="openMyAssessDetail('+r.id+')">查看</span>';
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.pos+'</td><td>'+r.planName+'</td><td>'+r.period+'</td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td style="white-space:nowrap">'+ops+'</td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title">上级评价</h1><button class="btn-primary" onclick="showToast(\'批量评分表已导出\')">导出批量评分表</button></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>考核计划</label><select><option value="">全部</option>'+perfPlanData.map(function(p){return '<option>'+p.name+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>评价状态</label><select><option value="">全部</option><option>员工自评中</option><option>上级评价中</option><option>已完成</option></select></div>'
+  + '<div class="filter-item"><label>姓名</label><input placeholder="模糊搜索"></div>'
+  + '<button class="btn-primary btn-sm">查询</button>'
+  + '</div>'
+  + pageSizeBar('perf_evaluate')
+  + '<div class="table-container"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>岗位</th><th>考核计划</th><th>周期</th><th>状态</th><th>操作</th></tr></thead><tbody>'
+  + tableRows + '</tbody></table></div>'
+  + renderPagination('perf_evaluate', perfAssessData.length);
+}
+
+function openEvaluateModal(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var indRows = r.indicators.map(function(ind,idx){
+    var diff = Math.abs(ind.superiorScore - ind.selfScore);
+    return '<tr'+(diff>=20?' style="background:#fef2f2"':'')+'><td>'+ind.name+'</td><td><span class="badge '+(ind.type==='定量'?'badge-blue':'badge-purple')+'">'+ind.type+'</span></td><td>'+ind.weight+'%</td><td>'+ind.target+'</td>'
+    + '<td style="text-align:center;font-weight:600;">'+ind.selfScore+'</td>'
+    + '<td><input type="number" min="0" max="100" value="'+ind.superiorScore+'" style="width:70px;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;text-align:center;font-weight:600;" onchange="updateEvalScore('+id+','+idx+',this.value)"></td>'
+    + '<td><select style="padding:4px;border:1px solid #d1d5db;border-radius:4px;"><option'+(ind.grade==='卓越'?' selected':'')+'>卓越</option><option'+(ind.grade==='优秀'?' selected':'')+'>优秀</option><option'+(ind.grade==='达标'?' selected':'')+'>达标</option><option'+(ind.grade==='待改进'?' selected':'')+'>待改进</option><option'+(ind.grade==='未达标'?' selected':'')+'>未达标</option></select></td>'
+    + '<td><textarea rows="2" style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;resize:vertical;">'+ind.superiorComment+'</textarea></td>'
+    + '<td>'+(diff>=20?'<span style="color:#ef4444;font-weight:600;font-size:11px;">⚠ 差异'+diff+'分</span>':'')+'</td></tr>';
+  }).join('');
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">上级评价 - '+r.name+' ('+r.period+')</h2>'
+  + '<div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;">员工自评得分：<b style="color:#3b82f6;">'+r.selfScore+'</b> | 当前综合得分：<b style="color:#16a34a;">'+r.totalScore+'</b> | 当前等级：<b style="color:#ca8a04;">'+r.finalGrade+'</b></div>'
+  + '<div class="table-container"><table><thead><tr><th>指标名称</th><th>类型</th><th>权重</th><th>目标值</th><th>自评分</th><th>上级评分</th><th>档位</th><th>评价说明</th><th>差异</th></tr></thead><tbody>'+indRows+'</tbody></table></div>'
+  + '<div style="margin-top:12px;padding:10px;background:#fef9c3;border-radius:6px;font-size:12px;color:#854d0e;">提示：当上级评分与自评分差异≥20分时系统自动高亮提示，须在评价说明中解释差异原因。所有指标评价完成后才能提交。</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-secondary" onclick="closeModal();showToast(\'草稿已保存\')">保存草稿</button> <button class="btn-primary" onclick="closeModal();showToast(\'上级评价已提交，AI评语已自动生成\')">提交评价</button></div>';
+  openModal(html, true);
+}
+
+function updateEvalScore(recordId, indIdx, newVal) {
+  var r = perfAssessData.find(function(a){return a.id===recordId;});
+  if(!r) return;
+  var v = Math.max(0, Math.min(100, parseInt(newVal)||0));
+  r.indicators[indIdx].superiorScore = v;
+  var total = 0;
+  for(var j=0;j<r.indicators.length;j++) total += r.indicators[j].superiorScore * r.indicators[j].weight / 100;
+  r.totalScore = Math.round(total*10)/10;
+  var hdr = document.querySelector('.modal-body div[style*="background:#f8fafc"]');
+  if(hdr) {
+    var grade = r.totalScore>=90?'S':r.totalScore>=80?'A':r.totalScore>=60?'B':r.totalScore>=40?'C':'D';
+    hdr.innerHTML = hdr.innerHTML.replace(/当前综合得分：<b[^>]*>[^<]+<\/b>/, '当前综合得分：<b style="color:#16a34a;">'+r.totalScore+'</b>').replace(/当前等级：<b[^>]*>[^<]+<\/b>/, '当前等级：<b style="color:#ca8a04;">'+grade+'</b>');
+  }
+}
+
+// ---- 6.5 结果管理（等级分布 + 强制分布）----
+var resultTab = 'list';
+function renderPerfResult() {
+  var tabHtml = '<div class="tab-bar"><div class="tab-item '+(resultTab==='list'?'active':'')+'" onclick="resultTab=\'list\';renderPage()">考核结果</div><div class="tab-item '+(resultTab==='dist'?'active':'')+'" onclick="resultTab=\'dist\';renderPage()">强制分布</div></div>';
+  if(resultTab==='dist') return tabHtml + renderForcedDist();
+  var rows = getPageData(perfAssessData, 'perf_result');
+  var tableRows = rows.map(function(r) {
+    var gradeColor = r.finalGrade==='S'?'#7c3aed':r.finalGrade==='A'?'#2563eb':r.finalGrade==='B'?'#16a34a':r.finalGrade==='C'?'#ca8a04':'#dc2626';
+    var ops = '<span class="op-link" onclick="openMyAssessDetail('+r.id+')">查看</span>';
+    ops += '<span class="op-link" onclick="openResultDetail('+r.id+')">详情</span>';
+    if(r.status==='HR复核中') ops += '<span class="op-link" onclick="hrApprove('+r.id+')">复核</span>';
+    var coeff = r.finalGrade==='S'?'1.0-1.2x':r.finalGrade==='A'?'1.0-1.1x':r.finalGrade==='B'?'1.0x':r.finalGrade==='C'?'0.5x':'0x';
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.planName+'</td><td>'+r.totalScore+'</td><td>'+r.initialGrade+'</td><td><span style="display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;background:'+gradeColor+';color:#fff;font-weight:700;font-size:13px;">'+r.finalGrade+'</span></td><td style="font-size:12px;font-weight:600;color:#6b7280;">'+coeff+'</td><td>'+(r.adjusted?'<span style="color:#ef4444;font-size:11px;">已调整</span>':'—')+'</td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td style="white-space:nowrap">'+ops+'</td></tr>';
+  }).join('');
+  return tabHtml + '<div class="page-header"><h1 class="page-title">考核结果管理</h1><div><button class="btn-secondary" onclick="showToast(\'结果已导出\')">导出</button> <button class="btn-primary" onclick="showToast(\'薪酬系数已推送\')">推送薪酬</button></div></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>考核计划</label><select><option value="">全部</option>'+perfPlanData.map(function(p){return '<option>'+p.name+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>最终等级</label><select><option value="">全部</option><option>S</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>'
+  + '<div class="filter-item"><label>姓名</label><input placeholder="模糊搜索"></div>'
+  + '<button class="btn-primary btn-sm">查询</button>'
+  + '</div>'
+  + pageSizeBar('perf_result')
+  + '<div class="table-container"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>考核计划</th><th>综合得分</th><th>初始等级</th><th>最终等级</th><th>绩效系数</th><th>调整</th><th>状态</th><th>操作</th></tr></thead><tbody>'
+  + tableRows + '</tbody></table></div>'
+  + renderPagination('perf_result', perfAssessData.length);
+}
+
+function renderForcedDist() {
+  var gradeCount = {S:0,A:0,B:0,C:0,D:0};
+  perfAssessData.forEach(function(r){ gradeCount[r.finalGrade]++; });
+  var total = perfAssessData.length;
+  var limits = {S:10,A:20,B:40,C:20,D:10};
+  var colors = {S:'#7c3aed',A:'#2563eb',B:'#16a34a',C:'#ca8a04',D:'#dc2626'};
+  var barsHtml = '';
+  var gk;
+  for(gk in gradeCount){
+    var pct = Math.round(gradeCount[gk]/total*1000)/10;
+    var barW = Math.max(pct, 5);
+    var targetX = limits[gk];
+    barsHtml += '<div class="grade-bar"><div class="bar-label" style="color:'+colors[gk]+'">'+gk+'</div><div class="bar-track"><div class="bar-fill" style="width:'+barW+'%;background:'+colors[gk]+';">'+gradeCount[gk]+'人</div><div class="bar-target" style="left:'+targetX+'%;" title="上限'+targetX+'%"></div></div><div class="bar-value">'+pct+'% / '+(gk==='B'?'≥':'≤')+limits[gk]+'%</div></div>';
+  }
+  var deptDist = {};
+  perfAssessData.forEach(function(r){
+    if(!deptDist[r.dept]) deptDist[r.dept] = {S:0,A:0,B:0,C:0,D:0,total:0};
+    deptDist[r.dept][r.finalGrade]++;
+    deptDist[r.dept].total++;
+  });
+  var deptRows = '';
+  var dk;
+  for(dk in deptDist){
+    var dd = deptDist[dk];
+    var dp = {S:Math.round(dd.S/dd.total*1000)/10,A:Math.round(dd.A/dd.total*1000)/10,B:Math.round(dd.B/dd.total*1000)/10,C:Math.round(dd.C/dd.total*1000)/10,D:Math.round(dd.D/dd.total*1000)/10};
+    var warn = dp.S>10||dp.A>20||dp.B<40||dp.C>20||(dp.C+dp.D)<10||dp.D>10;
+    deptRows += '<tr><td>'+dk+'</td><td>'+dd.total+'</td><td>'+dd.S+' ('+dp.S+'%)</td><td>'+dd.A+' ('+dp.A+'%)</td><td>'+dd.B+' ('+dp.B+'%)</td><td>'+dd.C+' ('+dp.C+'%)</td><td>'+dd.D+' ('+dp.D+'%)</td><td>'+(warn?'<span class="badge badge-red">需调整</span>':'<span class="badge badge-green">达标</span>')+'</td></tr>';
+  }
+  return '<div class="page-header"><h1 class="page-title">强制分布校验</h1><button class="btn-primary" onclick="showToast(\'强制分布方案已确认\')">确认分布</button></div>'
+  + '<div style="display:flex;gap:16px;margin-bottom:16px;">'
+  + '<div style="flex:1;background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);"><div style="font-size:14px;font-weight:600;margin-bottom:14px;">全公司等级分布（共'+total+'人）</div>'+barsHtml+'<div style="font-size:11px;color:#9ca3af;margin-top:8px;">红色竖线 = 强制比例上限/下限</div></div>'
+  + '<div style="flex:1;background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);"><div style="font-size:14px;font-weight:600;margin-bottom:14px;">强制分布规则</div>'
+  + '<div style="font-size:13px;line-height:2;color:#4b5563;">'
+  + 'S（卓越）：≤10% | 综合得分≥90<br>A（优秀）：≤20% | 综合得分80-89<br>B（良好）：≥40% | 综合得分60-79<br>C（待改进）：≤20% | 综合得分40-59<br>D（不合格）：≤10% | 综合得分&lt;40<br>C+D合计：≥10%</div>'
+  + '<div style="margin-top:12px;padding:10px;background:#fef2f2;border-radius:6px;font-size:12px;color:#991b1b;">调整优先级：S超限→降最低分S为A | A超限→降最低分A为B | C超限→升最高分C为B | D超限→升最高分D为C</div>'
+  + '</div></div>'
+  + '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">各部门等级分布</div>'
+  + '<div class="table-container"><table><thead><tr><th>部门</th><th>总人数</th><th>S</th><th>A</th><th>B</th><th>C</th><th>D</th><th>校验</th></tr></thead><tbody>'+deptRows+'</tbody></table></div>';
+}
+
+function openResultDetail(id) {
+  openMyAssessDetail(id);
+}
+
+function hrApprove(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  r.status = '待确认';
+  r.flowStep = 6;
+  renderPage();
+  showToast('HR复核通过，已推送至员工确认');
+}
+
+// ---- 6.6 综合评语（AI生成 + 版本历史）----
+function renderPerfComment() {
+  var rows = getPageData(perfAssessData, 'perf_comment');
+  var tableRows = rows.map(function(r) {
+    var ops = '<span class="op-link" onclick="openCommentDetail('+r.id+')">查看</span>';
+    if(r.commentStatus!=='已确认') ops += '<span class="op-link" onclick="regenComment('+r.id+')">重新生成</span>';
+    ops += '<span class="op-link" onclick="openCommentDetail('+r.id+')">编辑</span>';
+    return '<tr><td>'+r.empNo+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.planName+'</td><td>'+r.totalScore+'</td><td><span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;background:'+(r.finalGrade==='S'?'#7c3aed':r.finalGrade==='A'?'#2563eb':r.finalGrade==='B'?'#16a34a':r.finalGrade==='C'?'#ca8a04':'#dc2626')+';color:#fff;font-weight:700;font-size:12px;">'+r.finalGrade+'</span></td><td><span class="badge '+getStatusBadge(r.commentStatus)+'">'+r.commentStatus+'</span></td><td>'+r.commentVersions.length+'</td><td style="white-space:nowrap">'+ops+'</td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title">综合评语管理</h1><button class="btn-secondary" onclick="showToast(\'批量生成已启动，请稍候刷新\')">批量生成评语</button></div>'
+  + '<div style="background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);display:flex;align-items:center;gap:16px;">'
+  + '<div style="font-size:13px;color:#6b7280;">AI评语生成状态</div>'
+  + '<div style="flex:1;display:flex;gap:20px;">'
+  + '<div><span style="font-size:20px;font-weight:700;color:#16a34a;">'+perfAssessData.filter(function(r){return r.commentStatus==='已生成'||r.commentStatus==='已编辑';}).length+'</span> <span style="font-size:12px;color:#6b7280;">已生成</span></div>'
+  + '<div><span style="font-size:20px;font-weight:700;color:#3b82f6;">'+perfAssessData.filter(function(r){return r.commentStatus==='待生成';}).length+'</span> <span style="font-size:12px;color:#6b7280;">待生成</span></div>'
+  + '<div><span style="font-size:20px;font-weight:700;color:#ca8a04;">'+perfAssessData.filter(function(r){return r.commentStatus==='已确认';}).length+'</span> <span style="font-size:12px;color:#6b7280;">已确认</span></div>'
+  + '<div><span style="font-size:20px;font-weight:700;color:#6b7280;">'+perfAssessData.reduce(function(s,r){return s+r.commentVersions.length;},0)+'</span> <span style="font-size:12px;color:#6b7280;">总版本数</span></div>'
+  + '</div></div>'
+  + '<div class="filter-bar">'
+  + '<div class="filter-item"><label>考核计划</label><select><option value="">全部</option>'+perfPlanData.map(function(p){return '<option>'+p.name+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
+  + '<div class="filter-item"><label>评语状态</label><select><option value="">全部</option><option>待生成</option><option>已生成</option><option>已编辑</option><option>已确认</option><option>已归档</option></select></div>'
+  + '<div class="filter-item"><label>姓名</label><input placeholder="模糊搜索"></div>'
+  + '<button class="btn-primary btn-sm">查询</button>'
+  + '</div>'
+  + pageSizeBar('perf_comment')
+  + '<div class="table-container"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>考核计划</th><th>综合得分</th><th>等级</th><th>评语状态</th><th>版本数</th><th>操作</th></tr></thead><tbody>'
+  + tableRows + '</tbody></table></div>'
+  + renderPagination('perf_comment', perfAssessData.length);
+}
+
+function openCommentDetail(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var versionsHtml = r.commentVersions.map(function(v){
+    return '<div style="padding:10px;background:#f8fafc;border-radius:6px;margin-bottom:8px;font-size:12px;">'
+    + '<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:600;color:#374151;">V'+v.version+' - '+v.editor+'</span><span style="color:#9ca3af;">'+v.time+'</span></div>'
+    + '<div style="color:#4b5563;line-height:1.6;white-space:pre-line;">'+v.content.substring(0,200)+(v.content.length>200?'...':'')+'</div>'
+    + '</div>';
+  }).join('');
+  var html = '<h2 style="font-size:16px;font-weight:700;margin-bottom:16px;">综合评语 - '+r.name+' ('+r.period+')</h2>'
+  + '<div style="display:flex;gap:16px;margin-bottom:16px;">'
+  + '<div style="flex:1;background:#f0fdf4;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">综合得分</div><div style="font-size:24px;font-weight:700;color:#16a34a;">'+r.totalScore+'</div></div>'
+  + '<div style="flex:1;background:#fefce8;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">考核等级</div><div style="font-size:24px;font-weight:700;color:#ca8a04;">'+r.finalGrade+'</div></div>'
+  + '<div style="flex:1;background:#eff6ff;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:12px;color:#6b7280;">评语状态</div><div style="font-size:16px;font-weight:600;color:#3b82f6;margin-top:4px;">'+r.commentStatus+'</div></div>'
+  + '</div>'
+  + '<div style="margin-bottom:16px;">'
+  + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div style="font-size:14px;font-weight:600;">当前评语内容</div><div><button class="btn-secondary btn-sm" onclick="showToast(\'已进入编辑模式\')">编辑</button> <button class="btn-primary btn-sm" onclick="regenComment('+r.id+')">重新生成</button></div></div>'
+  + '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:13px;line-height:1.8;color:#374151;white-space:pre-line;min-height:120px;">'+r.commentContent+'</div>'
+  + '</div>'
+  + '<div style="margin-bottom:16px;padding:12px;background:#eff6ff;border-radius:6px;font-size:12px;color:#1e40af;">'
+  + '<b>AI生成说明：</b>评语由大模型基于考核数据自动生成，采用"总体评价+指标表现+改进建议"三段式结构。支持人工编辑，每次编辑自动保存版本记录。HR复核确认后评语锁定。<br>'
+  + '<b>数据安全：</b>评语生成仅传输指标名称、权重、评分等非敏感字段，禁止传输员工姓名、工号、薪酬数据。</div>'
+  + '<div><div style="font-size:14px;font-weight:600;margin-bottom:10px;">版本历史（共'+r.commentVersions.length+'个版本）</div>'+versionsHtml+'</div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()">关闭</button>'
+  + (r.commentStatus!=='已确认'?' <button class="btn-primary" onclick="lockComment('+r.id+')">确认锁定</button>':'<span style="margin-left:8px;color:#16a34a;font-size:13px;font-weight:600;">已锁定</span>')
+  + '</div>';
+  openModal(html, true);
+}
+
+function regenComment(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  var newVersion = r.commentVersions.length + 1;
+  var newContent = r.commentContent.replace('【总体评价】','【总体评价】[重新生成]');
+  r.commentVersions.push({version:newVersion, content:newContent, editor:'系统(AI)', time:'2026-08-07 '+String(randInt(9,17)).padStart(2,'0')+':'+String(randInt(10,59)).padStart(2,'0')});
+  r.commentContent = newContent;
+  r.commentStatus = '已生成';
+  renderPage();
+  showToast('评语已重新生成（V'+newVersion+'）');
+}
+
+function lockComment(id) {
+  var r = perfAssessData.find(function(x){return x.id===id;});
+  if(!r) return;
+  r.commentStatus = '已确认';
+  closeModal();
+  renderPage();
+  showToast('评语已确认锁定，不可再编辑');
+}
+
 // ============ PRD NOTES ============
 function renderPrd() {
   var c = document.getElementById('prdContent');
@@ -1650,7 +2213,39 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">业务规则</div>• 薪酬信息仅HR总监及以上可查看明文<br>• 变更日志记录所有字段修改（修改人/时间/前值/后值）<br>• 离职员工档案保留2年<br>• 档案导出需审批</div>'
     + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 敏感字段加密存储<br>• 查看日志全量记录<br>• 批量导出需二次审批<br>• 脱敏规则不可配置（强制）</div>',
 
-    attendance: getAttPrd()
+    attendance: getAttPrd(),
+
+    perf_indicator: '<div class="prd-note"><div class="prd-note-title">模块定位</div>指标备案是绩效考核的起点，员工/主管提交当期考核指标（名称、权重、目标值），经HR审核备案后作为评分依据。仅"已备案"状态的指标才能进入评分环节。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">关键字段</div>• 考核周期：季度/年度，系统自动生成当期选项<br>• 指标名称：max 100字，同周期不可重复<br>• 指标类型：定量指标/定性指标<br>• 指标权重（%）：所有指标权重之和=100%，单项5%~80%<br>• 目标值：定量填数值范围，定性填描述<br>• 评分标准说明：优秀/良好/达标/未达标各档判断标准<br>• 备案状态：草稿/待审核/已备案/已驳回</div>'
+    + '<div class="prd-note"><div class="prd-note-title">业务规则</div>• 保存时校验权重之和=100%，不通过则阻止提交<br>• 评分阶段指标列表为只读，评分人不可修改<br>• 权重异常时提示"请联系HR修改备案指标"<br>• 驳回后需修改重新提交</div>',
+
+    perf_plan: '<div class="prd-note"><div class="prd-note-title">模块定位</div>HR配置考核模板（指标库、权重、评分标准）和考核计划（周期、参与人、截止时间），支持KPI、OKR、BSC多种考核模式。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">计划配置字段</div>• 计划名称/周期（季度/年度）<br>• 考核模式：KPI（关键绩效指标）/ OKR（目标与关键成果）/ BSC（平衡计分卡）<br>• 参与范围：按部门/岗位/人员选择<br>• 时间节点：自评截止→上级评价截止→审批截止→HR复核截止<br>• 评分标准模板：引用指标库中的评分档位</div>'
+    + '<div class="prd-note"><div class="prd-note-title">业务流程（8步）</div><div class="flow">指标备案 → 考核配置 → 员工自评 → 上级评价 → 上上级审批 → HR复核 → 结果确认 → 归档流转</div></div>'
+    + '<div class="prd-note"><div class="prd-note-title">角色权限</div>• 员工：查看已备案指标，填写自评分及说明<br>• 直属上级：查看下属自评，填写上级评分及评价<br>• 上上级：查看汇总评分，审批/驳回/调整分数<br>• HR管理员：复核最终结果，确认强制分布，归档备案</div>',
+
+    perf_myassess: '<div class="prd-note"><div class="prd-note-title">模块定位</div>员工查看已备案指标，填写完成情况，提交自评分和自评说明。自评结果供上级参考，不直接计入综合得分。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">自评字段</div>• 指标名称/权重/目标值：只读，来自备案<br>• 完成情况说明：max 500字<br>• 自评分：0-100分，定量可自动计算后微调（±5），定性选档位<br>• 自评档位：卓越/优秀/达标/待改进/未达标，与分值联动<br>• 自评说明：max 300字</div>'
+    + '<div class="prd-note"><div class="prd-note-title">校验规则</div>• 所有指标必须完成自评后才能提交<br>• 定量指标完成情况说明必填<br>• 定性指标自评说明必填<br>• 自评分与自评档位须匹配（分值落在所选档位区间内）<br>• 支持保存草稿，截止时间前可修改</div>'
+    + '<div class="prd-note"><div class="prd-note-title">评分档位对照</div>• 卓越：90-100分（定量≥120%完成率）<br>• 优秀：80-89分（定量100%-119%）<br>• 达标：60-79分（定量80%-99%）<br>• 待改进：40-59分（定量60%-79%）<br>• 未达标：0-39分（定量&lt;60%）</div>',
+
+    perf_evaluate: '<div class="prd-note"><div class="prd-note-title">模块定位</div>直属上级查看所有下属的自评结果，填写上级评分及评价说明。上级评分与自评分差异≥20分时系统自动高亮提示。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">评价字段</div>• 员工自评分/自评说明：只读参考<br>• 上级评分：0-100分，可参考自评分独立打分<br>• 上级评分档位：卓越/优秀/达标/待改进/未达标<br>• 上级评价说明：max 500字，填写评价依据和改进建议<br>• 评分差异标记：差异≥20分自动高亮</div>'
+    + '<div class="prd-note"><div class="prd-note-title">校验规则</div>• 所有下属指标均须完成评价后才能批量提交<br>• 每项指标评价说明必填<br>• 评分差异≥20分须在评价说明中解释差异原因<br>• 支持保存草稿，截止时间前可修改</div>'
+    + '<div class="prd-note"><div class="prd-note-title">定量指标自动评分</div>• 完成率≥120%：95-100分（默认95）<br>• 100%-119%：85-94分（默认90）<br>• 80%-99%：70-84分（默认77）<br>• 60%-79%：50-69分（默认60）<br>• &lt;60%：0-49分（默认30）<br>• 人工微调±5分，超±5需填写说明</div>',
+
+    perf_result: '<div class="prd-note"><div class="prd-note-title">模块定位</div>考核结果管理，包括综合得分计算、等级自动核算、强制分布校验、HR复核确认、员工结果确认及申诉。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">综合得分公式</div>综合得分 = Σ（各项指标得分 × 该指标权重），以上级评价得分为基础（经审批调整后重算），员工自评分不计入。保留小数点后一位（四舍五入）。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">等级定义与强制分布</div>• S（卓越）≥90分，≤10%，绩效系数1.0-1.2x<br>• A（优秀）80-89分，≤20%，绩效系数1.0-1.1x<br>• B（良好）60-79分，≥40%，绩效系数1.0x<br>• C（待改进）40-59分，≤20%，绩效系数0.5x<br>• D（不合格）&lt;40分，≤10%，绩效系数0x<br>• C+D合计≥10%</div>'
+    + '<div class="prd-note"><div class="prd-note-title">强制分布调整规则</div>• S超出上限：将得分最低的S降为A<br>• A超出上限：将得分最低的A降为B<br>• C超出上限：将得分最高的C升为B<br>• D超出上限：将得分最高的D升为C<br>• C+D不足下限：将得分最低的B降为C<br>• 以部门/团队为单位执行，跨部门不强制调剂</div>'
+    + '<div class="prd-note"><div class="prd-note-title">结果确认与申诉</div>• 员工查看结果，3日内可申诉；超期自动确认<br>• 归档后数据自动推送至薪酬模块（绩效系数）和员工档案</div>',
+
+    perf_comment: '<div class="prd-note"><div class="prd-note-title">模块定位</div>基于各项指标评价内容，由大模型自动生成综合评语（200-500字），支持人工编辑、版本管理、锁定归档。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">评语结构（三段式）</div>• 总体评价（1段）：整体表现概述<br>• 指标表现（按指标逐条）：各指标亮点与不足<br>• 改进建议（1段）：具体可操作的改进方向</div>'
+    + '<div class="prd-note"><div class="prd-note-title">生成触发时机</div>• 上级评价提交后 → 自动生成"上级评语"草稿<br>• 上上级审批通过后 → 自动生成"综合评语"终稿<br>• HR复核阶段 → 可重新生成或手动编辑</div>'
+    + '<div class="prd-note"><div class="prd-note-title">评语状态流转</div><div class="flow">待生成 → 已生成 → 已编辑 → 已确认 → 已归档</div>• 已确认后锁定，不可再编辑</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 仅传输指标名称、权重、评分、评价说明等非敏感字段<br>• 禁止传输员工姓名、工号、薪酬数据至外部大模型<br>• 大模型调用全过程记录审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">版本管理</div>• 每次编辑自动保存版本记录（操作人、时间、内容快照）<br>• 支持版本对比，可回退至任意历史版本<br>• HR可查看评语编辑历史记录</div>'
   };
   c.innerHTML = prdData[currentModule] || '';
 }
