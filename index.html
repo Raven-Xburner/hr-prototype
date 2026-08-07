@@ -467,6 +467,16 @@ var NAV_GROUPS = [
     { key:'perf_evaluate', name:'上级评价', icon:'✍️' },
     { key:'perf_result', name:'结果管理', icon:'📊' },
     { key:'perf_comment', name:'综合评语', icon:'💬' }
+  ]},
+  { name:'薪酬管理', icon:'💰', collapsed:false, modules:[
+    { key:'pay_structure', name:'薪资结构配置', icon:'⚙️' },
+    { key:'pay_entry', name:'薪资录入', icon:'📝' },
+    { key:'pay_adjust', name:'调薪管理', icon:'📈' },
+    { key:'pay_other', name:'其他工资项目', icon:'📎' },
+    { key:'pay_insurance', name:'社保公积金', icon:'🏦' },
+    { key:'pay_calc', name:'工资计算核算', icon:'🧮' },
+    { key:'pay_dispatch', name:'工资发放', icon:'💳' },
+    { key:'pay_tax', name:'个税管理', icon:'📋' }
   ]}
 ];
 var currentModule = 'onboard';
@@ -615,6 +625,14 @@ function renderPage() {
     case 'perf_evaluate': c.innerHTML = renderPerfEvaluate(); break;
     case 'perf_result': c.innerHTML = renderPerfResult(); break;
     case 'perf_comment': c.innerHTML = renderPerfComment(); break;
+    case 'pay_structure': c.innerHTML = renderPayStructure(); break;
+    case 'pay_entry': c.innerHTML = renderPayEntry(); break;
+    case 'pay_adjust': c.innerHTML = renderPayAdjust(); break;
+    case 'pay_other': c.innerHTML = renderPayOther(); break;
+    case 'pay_insurance': c.innerHTML = renderPayInsurance(); break;
+    case 'pay_calc': c.innerHTML = renderPayCalc(); break;
+    case 'pay_dispatch': c.innerHTML = renderPayDispatch(); break;
+    case 'pay_tax': c.innerHTML = renderPayTax(); break;
   }
 }
 
@@ -2134,6 +2152,340 @@ function lockComment(id) {
   showToast('评语已确认锁定，不可再编辑');
 }
 
+// ============ SALARY MODULE DATA & RENDER ============
+var payStructureTab = 'items';
+var salaryItemsData = [
+  {id:'PAY-0001',name:'基本工资',type:'固定项',cat:'收入项',tax:true,social:true,order:1,group:'全部',status:'启用'},
+  {id:'PAY-0002',name:'岗位津贴',type:'固定项',cat:'收入项',tax:true,social:true,order:2,group:'全部',status:'启用'},
+  {id:'PAY-0003',name:'交通补贴',type:'固定项',cat:'收入项',tax:true,social:false,order:3,group:'全部',status:'启用'},
+  {id:'PAY-0004',name:'餐补',type:'固定项',cat:'收入项',tax:false,social:false,order:4,group:'全部',status:'启用'},
+  {id:'PAY-0005',name:'全勤奖',type:'公式项',cat:'收入项',tax:true,social:false,order:5,group:'全部',status:'启用',formula:'IF(出勤天数>=22, 500, 0)'},
+  {id:'PAY-0006',name:'绩效奖金',type:'公式项',cat:'收入项',tax:true,social:false,order:6,group:'全部',status:'启用',formula:'绩效系数 × 绩效基数'},
+  {id:'PAY-0007',name:'加班费-工作日',type:'系统项',cat:'收入项',tax:true,social:true,order:7,group:'全部',status:'启用'},
+  {id:'PAY-0008',name:'加班费-休息日',type:'系统项',cat:'收入项',tax:true,social:true,order:8,group:'全部',status:'启用'},
+  {id:'PAY-0009',name:'加班费-节假日',type:'系统项',cat:'收入项',tax:true,social:true,order:9,group:'全部',status:'启用'},
+  {id:'PAY-0010',name:'迟到扣款',type:'系统项',cat:'扣款项',tax:false,social:false,order:10,group:'全部',status:'启用'},
+  {id:'PAY-0011',name:'早退扣款',type:'系统项',cat:'扣款项',tax:false,social:false,order:11,group:'全部',status:'启用'},
+  {id:'PAY-0012',name:'旷工扣款',type:'系统项',cat:'扣款项',tax:false,social:false,order:12,group:'全部',status:'启用'},
+  {id:'PAY-0013',name:'事假扣薪',type:'系统项',cat:'扣款项',tax:false,social:false,order:13,group:'全部',status:'启用'},
+  {id:'PAY-0014',name:'病假扣薪',type:'系统项',cat:'扣款项',tax:false,social:false,order:14,group:'全部',status:'启用'},
+  {id:'PAY-0015',name:'社保个人扣款',type:'公式项',cat:'扣款项',tax:false,social:false,order:15,group:'全部',status:'启用'},
+  {id:'PAY-0016',name:'公积金个人扣款',type:'公式项',cat:'扣款项',tax:false,social:false,order:16,group:'全部',status:'启用'},
+  {id:'PAY-0017',name:'个人所得税',type:'公式项',cat:'扣款项',tax:false,social:false,order:17,group:'全部',status:'启用'},
+  {id:'PAY-0018',name:'年终奖',type:'手工项',cat:'收入项',tax:true,social:false,order:18,group:'管理岗',status:'启用'}
+];
+var salaryGroupsData = [
+  {id:'SG-001',name:'研发序列薪资组',scope:'研发岗位序列',items:16,payDay:25,dispatchDay:10,status:'启用'},
+  {id:'SG-002',name:'市场运营薪资组',scope:'市场运营岗位序列',items:14,payDay:25,dispatchDay:10,status:'启用'},
+  {id:'SG-003',name:'管理岗薪资组',scope:'管理岗位序列',items:18,payDay:25,dispatchDay:10,status:'启用'},
+  {id:'SG-004',name:'运维序列薪资组',scope:'运维岗位序列',items:15,payDay:25,dispatchDay:10,status:'启用'},
+  {id:'SG-005',name:'职能序列薪资组',scope:'行政/财务/人力',items:14,payDay:25,dispatchDay:10,status:'启用'}
+];
+
+function renderPayStructure() {
+  var tabHtml = '<div class="tab-bar"><div class="tab-item '+(payStructureTab==='items'?'active':'')+'" onclick="payStructureTab=\'items\';renderPage()">薪资项目管理</div><div class="tab-item '+(payStructureTab==='groups'?'active':'')+'" onclick="payStructureTab=\'groups\';renderPage()">薪资组管理</div></div>';
+  if(payStructureTab==='groups') {
+    var gRows = salaryGroupsData.map(function(g) {
+      return '<tr><td>'+g.id+'</td><td>'+g.name+'</td><td>'+g.scope+'</td><td>'+g.items+'项</td><td>每月'+g.payDay+'日</td><td>次月'+g.dispatchDay+'日</td><td><span class="badge badge-green">'+g.status+'</span></td><td><span class="op-link" onclick="showToast(\'查看薪资组详情\')">查看</span><span class="op-link" onclick="showToast(\'编辑薪资组\')">编辑</span></td></tr>';
+    }).join('');
+    return tabHtml + '<div class="page-header"><h1 class="page-title">薪资组管理</h1><button class="btn-primary" onclick="showToast(\'新增薪资组\')">+ 新增薪资组</button></div>'
+    + '<div class="table-container"><table><thead><tr><th>编号</th><th>薪资组名称</th><th>适用范围</th><th>包含项目</th><th>算薪日</th><th>发放日</th><th>状态</th><th>操作</th></tr></thead><tbody>'+gRows+'</tbody></table></div>';
+  }
+  var rows = salaryItemsData.map(function(r) {
+    var typeBadge = r.type==='固定项'?'badge-blue':r.type==='公式项'?'badge-purple':r.type==='系统项'?'badge-green':'badge-yellow';
+    return '<tr><td>'+r.id+'</td><td>'+r.name+'</td><td><span class="badge '+typeBadge+'">'+r.type+'</span></td><td>'+r.cat+'</td><td>'+(r.formula?'<span style="font-size:11px;color:#6b21a8">'+r.formula+'</span>':'—')+'</td><td>'+(r.tax?'<span class="badge badge-red">是</span>':'否')+'</td><td>'+(r.social?'<span class="badge badge-blue">是</span>':'否')+'</td><td><span class="badge badge-green">'+r.status+'</span></td><td><span class="op-link" onclick="openPayItemEdit(\''+r.id+'\')">编辑</span><span class="op-link" onclick="showToast(\'已切换状态\')">停用</span></td></tr>';
+  }).join('');
+  return tabHtml + '<div class="page-header"><h1 class="page-title">薪资项目管理</h1><button class="btn-primary" onclick="openPayItemForm()">+ 新增薪资项目</button></div>'
+  + '<div class="filter-bar"><div class="filter-item"><label>项目类型</label><select><option>全部</option><option>固定项</option><option>公式项</option><option>手工项</option><option>系统项</option></select></div><div class="filter-item"><label>项目分类</label><select><option>全部</option><option>收入项</option><option>扣款项</option></select></div><div class="filter-item"><label>状态</label><select><option>全部</option><option>启用</option><option>停用</option></select></div></div>'
+  + '<div class="table-container"><table><thead><tr><th>项目编号</th><th>项目名称</th><th>类型</th><th>分类</th><th>计算公式</th><th>计税</th><th>计社保</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+function openPayItemForm() {
+  var html = '<div class="modal-title">新增薪资项目</div><div class="modal-close" onclick="closeModal()">×</div>'
+  + '<div class="form-grid"><div class="form-group"><label>项目编号</label><input value="PAY-0019" disabled></div><div class="form-group"><label>项目名称 <span class="req">*</span></label><input data-required="true" placeholder="如：通讯补贴"></div><div class="form-group"><label>项目类型 <span class="req">*</span></label><select data-required="true" onchange="toggleFormulaEdit(this)"><option value="">请选择</option><option>固定项</option><option>公式项</option><option>手工项</option><option>系统项</option></select></div></div>'
+  + '<div class="form-grid" style="margin-top:12px"><div class="form-group"><label>项目分类 <span class="req">*</span></label><select data-required="true"><option value="">请选择</option><option>收入项</option><option>扣款项</option><option>税前项</option><option>税后项</option></select></div><div class="form-group"><label>是否计税</label><select><option>是</option><option>否</option></select></div><div class="form-group"><label>是否计社保基数</label><select><option>是</option><option>否</option></select></div></div>'
+  + '<div id="formulaSection" style="display:none;margin-top:16px"><div class="form-section-title">计算公式编辑器</div><div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px"><div style="display:flex;gap:8px;margin-bottom:12px"><div style="flex:1;background:#fff;border:1px solid #d1d5db;border-radius:6px;padding:12px;min-height:60px;font-size:13px;color:#6b7280">拖拽下方薪资项目到此处构建公式...</div></div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"><span style="background:#dbeafe;color:#1d4ed8;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">基本工资</span><span style="background:#dbeafe;color:#1d4ed8;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">岗位津贴</span><span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">绩效系数</span><span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">出勤天数</span><span style="background:#f3e8ff;color:#6b21a8;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">IF</span><span style="background:#f3e8ff;color:#6b21a8;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">ROUND</span><span style="background:#f3e8ff;color:#6b21a8;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">MAX</span><span style="background:#fef9c3;color:#854d0e;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">+</span><span style="background:#fef9c3;color:#854d0e;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">×</span><span style="background:#fef9c3;color:#854d0e;padding:4px 10px;border-radius:4px;font-size:12px;cursor:grab">÷</span></div><div class="form-group"><label>公式文本</label><input placeholder="如：(基本工资 + 岗位津贴) × 0.1"></div></div></div>'
+  + '<div class="form-grid" style="margin-top:12px"><div class="form-group"><label>显示顺序</label><input type="number" value="19"></div><div class="form-group"><label>生效月份</label><input type="month" value="2026-08"></div><div class="form-group"><label>适用薪资组</label><select multiple style="height:60px"><option>研发序列薪资组</option><option>市场运营薪资组</option><option>管理岗薪资组</option><option>运维序列薪资组</option><option>职能序列薪资组</option></select></div></div>'
+  + '<div style="margin-top:20px;text-align:right"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px">取消</button><button class="btn-primary" onclick="closeModal();showToast(\'薪资项目已新增\')">保存</button></div>';
+  openModal(html, true);
+}
+function toggleFormulaEdit(sel) { document.getElementById('formulaSection').style.display = sel.value==='公式项'?'block':'none'; }
+function openPayItemEdit(id) {
+  var item = salaryItemsData.find(function(r){return r.id===id;});
+  if(!item) return;
+  var html = '<div class="modal-title">编辑薪资项目 - '+item.name+'</div><div class="modal-close" onclick="closeModal()">×</div>'
+  + '<div class="form-grid"><div class="form-group"><label>项目编号</label><input value="'+item.id+'" disabled></div><div class="form-group"><label>项目名称</label><input value="'+item.name+'"></div><div class="form-group"><label>项目类型</label><select><option'+(item.type==='固定项'?' selected':'')+'>固定项</option><option'+(item.type==='公式项'?' selected':'')+'>公式项</option><option'+(item.type==='手工项'?' selected':'')+'>手工项</option><option'+(item.type==='系统项'?' selected':'')+'>系统项</option></select></div></div>'
+  + '<div class="form-grid" style="margin-top:12px"><div class="form-group"><label>项目分类</label><select><option'+(item.cat==='收入项'?' selected':'')+'>收入项</option><option'+(item.cat==='扣款项'?' selected':'')+'>扣款项</option></select></div><div class="form-group"><label>是否计税</label><select><option'+(item.tax?' selected':'')+'>是</option><option'+(!item.tax?' selected':'')+'>否</option></select></div><div class="form-group"><label>是否计社保基数</label><select><option'+(item.social?' selected':'')+'>是</option><option'+(!item.social?' selected':'')+'>否</option></select></div></div>'
+  + (item.formula?'<div style="margin-top:16px"><div class="form-section-title">计算公式</div><div class="form-group"><input value="'+item.formula+'"></div></div>':'')
+  + '<div style="margin-top:20px;text-align:right"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px">取消</button><button class="btn-primary" onclick="closeModal();showToast(\'薪资项目已更新，是否重新计算受影响月份的薪资？\')">保存</button></div>';
+  openModal(html, true);
+}
+
+// ---- 薪资录入 ----
+var payEntryMonth = '2026-07';
+var payEntryGroup = 'all';
+var payEntryEmployees = [
+  {empId:'E001',name:'张三',dept:'研发部',seq:'研发',basic:15000,post:5000,transport:800,meal:500,fullAtt:500,perfBonus:6000,overtimeWd:1200,overtimeWe:800,overtimeHol:0,latDed:0,absDed:0,leaveDed:0,sickDed:0,socialDed:3200,fundDed:1800,taxDed:890},
+  {empId:'E002',name:'李四',dept:'市场部',seq:'市场运营',basic:12000,post:4000,transport:800,meal:500,fullAtt:500,perfBonus:4800,overtimeWd:600,overtimeWe:0,overtimeHol:0,latDed:50,absDed:0,leaveDed:0,sickDed:0,socialDed:2600,fundDed:1500,taxDed:520},
+  {empId:'E003',name:'王五',dept:'运维部',seq:'运维',basic:13000,post:4500,transport:800,meal:500,fullAtt:500,perfBonus:5200,overtimeWd:1800,overtimeWe:1200,overtimeHol:600,latDed:0,absDed:0,leaveDed:0,sickDed:0,socialDed:2900,fundDed:1650,taxDed:710},
+  {empId:'E004',name:'赵六',dept:'人力资源部',seq:'职能',basic:11000,post:3500,transport:800,meal:500,fullAtt:500,perfBonus:3300,overtimeWd:0,overtimeWe:0,overtimeHol:0,latDed:100,absDed:0,leaveDed:200,sickDed:0,socialDed:2200,fundDed:1200,taxDed:310},
+  {empId:'E005',name:'钱七',dept:'研发部',seq:'研发',basic:18000,post:6000,transport:800,meal:500,fullAtt:500,perfBonus:9000,overtimeWd:2400,overtimeWe:1600,overtimeHol:0,latDed:0,absDed:0,leaveDed:0,sickDed:0,socialDed:4000,fundDed:2200,taxDed:1560},
+  {empId:'E006',name:'孙八',dept:'财务部',seq:'职能',basic:12500,post:4000,transport:800,meal:500,fullAtt:0,perfBonus:3750,overtimeWd:0,overtimeWe:0,overtimeHol:0,latDed:0,absDed:0,leaveDed:0,sickDed:400,socialDed:2500,fundDed:1400,taxDed:430},
+  {empId:'E007',name:'周九',dept:'研发部',seq:'研发',basic:16000,post:5500,transport:800,meal:500,fullAtt:500,perfBonus:7200,overtimeWd:1800,overtimeWe:600,overtimeHol:0,latDed:0,absDed:0,leaveDed:0,sickDed:0,socialDed:3500,fundDed:1900,taxDed:1120},
+  {empId:'E008',name:'吴十',dept:'市场运营部',seq:'市场运营',basic:14000,post:4500,transport:800,meal:500,fullAtt:500,perfBonus:5600,overtimeWd:0,overtimeWe:0,overtimeHol:0,latDed:0,absDed:0,leaveDed:0,sickDed:0,socialDed:2800,fundDed:1550,taxDed:680}
+];
+function calcPayEntry(emp) {
+  var gross = emp.basic+emp.post+emp.transport+emp.meal+emp.fullAtt+emp.perfBonus+emp.overtimeWd+emp.overtimeWe+emp.overtimeHol;
+  var totalDed = emp.latDed+emp.absDed+emp.leaveDed+emp.sickDed+emp.socialDed+emp.fundDed+emp.taxDed;
+  return {gross:gross, totalDed:totalDed, net:gross-totalDed};
+}
+function renderPayEntry() {
+  var rows = payEntryEmployees.map(function(emp) {
+    var c = calcPayEntry(emp);
+    return '<tr><td style="white-space:nowrap">'+emp.empId+'</td><td style="white-space:nowrap">'+emp.name+'</td><td>'+emp.dept+'</td><td style="text-align:right">'+emp.basic.toLocaleString()+'</td><td style="text-align:right">'+emp.post.toLocaleString()+'</td><td style="text-align:right">'+emp.transport.toLocaleString()+'</td><td style="text-align:right">'+emp.meal.toLocaleString()+'</td><td style="text-align:right;color:#16a34a">'+emp.fullAtt.toLocaleString()+'</td><td style="text-align:right;color:#16a34a">'+emp.perfBonus.toLocaleString()+'</td><td style="text-align:right;color:#16a34a">'+(emp.overtimeWd+emp.overtimeWe+emp.overtimeHol).toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+(emp.latDed+emp.absDed+emp.leaveDed+emp.sickDed).toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+emp.socialDed.toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+emp.fundDed.toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+emp.taxDed.toLocaleString()+'</td><td style="text-align:right;font-weight:600">'+c.gross.toLocaleString()+'</td><td style="text-align:right;font-weight:600;color:#dc2626">'+c.totalDed.toLocaleString()+'</td><td style="text-align:right;font-weight:700;color:#1d4ed8">'+c.net.toLocaleString()+'</td></tr>';
+  }).join('');
+  var totalGross=0,totalDed=0,totalNet=0;
+  payEntryEmployees.forEach(function(e){var c=calcPayEntry(e);totalGross+=c.gross;totalDed+=c.totalDed;totalNet+=c.net;});
+  return '<div class="page-header"><h1 class="page-title">薪资录入</h1><div><button class="btn-secondary" onclick="showToast(\'模板已下载\')" style="margin-right:8px">下载模板</button><button class="btn-secondary" onclick="showToast(\'请选择Excel文件导入\')" style="margin-right:8px">批量导入</button><button class="btn-primary" onclick="showToast(\'数据已保存\')">保存</button></div></div>'
+  + '<div class="filter-bar"><div class="filter-item"><label>薪资月份</label><input type="month" value="'+payEntryMonth+'"></div><div class="filter-item"><label>薪资组</label><select><option value="all">全部薪资组</option><option>研发序列薪资组</option><option>市场运营薪资组</option><option>管理岗薪资组</option><option>运维序列薪资组</option><option>职能序列薪资组</option></select></div><div class="filter-item"><label>部门</label><select><option>全部部门</option><option>研发部</option><option>市场部</option><option>运维部</option><option>人力资源部</option><option>财务部</option></select></div><div class="filter-item"><label>员工搜索</label><input placeholder="工号/姓名"></div><button class="btn-primary btn-sm" style="height:32px">查询</button></div>'
+  + '<div style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;gap:24px;font-size:13px"><span>人数：<b>'+payEntryEmployees.length+'</b></span><span>应发合计：<b style="color:#16a34a">'+totalGross.toLocaleString()+'</b></span><span>扣款合计：<b style="color:#dc2626">'+totalDed.toLocaleString()+'</b></span><span>实发合计：<b style="color:#1d4ed8">'+totalNet.toLocaleString()+'</b></span></div>'
+  + '<div class="table-container" style="overflow-x:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th style="text-align:right">基本工资</th><th style="text-align:right">岗位津贴</th><th style="text-align:right">交通补贴</th><th style="text-align:right">餐补</th><th style="text-align:right">全勤奖</th><th style="text-align:right">绩效奖金</th><th style="text-align:right">加班费</th><th style="text-align:right">请假扣款</th><th style="text-align:right">社保</th><th style="text-align:right">公积金</th><th style="text-align:right">个税</th><th style="text-align:right">应发</th><th style="text-align:right">扣款</th><th style="text-align:right">实发</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+  + '<div style="margin-top:8px;font-size:11px;color:#9ca3af">* 灰色只读列为公式项/系统项，不可手工编辑 | 数据状态：核算中</div>';
+}
+
+// ---- 调薪管理 ----
+var adjustData = [
+  {id:'ADJ-202607-0001',empId:'E001',name:'张三',dept:'研发部',seq:'研发',level:'P7',type:'晋升调薪',reason:'晋升为高级工程师',items:'基本工资: 15000→18000, 岗位津贴: 5000→6000',effectMonth:'2026-08',status:'已通过',applicant:'王HR',date:'2026-07-15'},
+  {id:'ADJ-202607-0002',empId:'E005',name:'钱七',dept:'研发部',seq:'研发',level:'P8',type:'年度普调',reason:'年度薪酬调整',items:'基本工资: 18000→19500',effectMonth:'2027-01',status:'审批中',applicant:'王HR',date:'2026-07-18'},
+  {id:'ADJ-202607-0003',empId:'E004',name:'赵六',dept:'人力资源部',seq:'职能',level:'P5',type:'转正调薪',reason:'试用期转正',items:'基本工资: 9000→11000, 岗位津贴: 2800→3500',effectMonth:'2026-08',status:'已通过',applicant:'李HR',date:'2026-07-10'},
+  {id:'ADJ-202607-0004',empId:'E006',name:'孙八',dept:'财务部',seq:'职能',level:'P5',type:'特殊调薪',reason:'市场薪酬调研后调整',items:'基本工资: 11500→12500',effectMonth:'2026-09',status:'待审批',applicant:'王HR',date:'2026-07-20'},
+  {id:'ADJ-202606-0012',empId:'E002',name:'李四',dept:'市场部',seq:'市场运营',level:'P6',type:'降薪调薪',reason:'绩效考核不达标',items:'岗位津贴: 4500→4000',effectMonth:'2026-07',status:'已驳回',applicant:'王HR',date:'2026-06-25'},
+  {id:'ADJ-202606-0010',empId:'E003',name:'王五',dept:'运维部',seq:'运维',level:'P6',type:'晋升调薪',reason:'晋升为运维主管',items:'基本工资: 12000→13000, 岗位津贴: 4000→4500',effectMonth:'2026-07',status:'已生效',applicant:'李HR',date:'2026-06-20'}
+];
+function renderPayAdjust() {
+  var rows = adjustData.map(function(r) {
+    return '<tr><td style="white-space:nowrap">'+r.id+'</td><td>'+r.empId+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.level+'</td><td><span class="badge '+(r.type==='晋升调薪'?'badge-green':r.type==='年度普调'?'badge-blue':r.type==='转正调薪'?'badge-purple':r.type==='降薪调薪'?'badge-red':'badge-yellow')+'">'+r.type+'</span></td><td style="max-width:200px;font-size:12px">'+r.items+'</td><td>'+r.effectMonth+'</td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td><span class="op-link" onclick="openAdjustDetail(\''+r.id+'\')">查看</span><span class="op-link" onclick="showToast(\'审批操作\')">审批</span></td></tr>';
+  }).join('');
+  return '<div class="page-header"><h1 class="page-title">调薪管理</h1><div><button class="btn-secondary" onclick="showToast(\'请选择Excel模板\')" style="margin-right:8px">批量导入</button><button class="btn-primary" onclick="openAdjustForm()">+ 新增调薪</button></div></div>'
+  + '<div class="filter-bar"><div class="filter-item"><label>调薪类型</label><select><option>全部</option><option>晋升调薪</option><option>年度普调</option><option>转正调薪</option><option>特殊调薪</option><option>降薪调薪</option></select></div><div class="filter-item"><label>审批状态</label><select><option>全部</option><option>待审批</option><option>审批中</option><option>已通过</option><option>已驳回</option></select></div><div class="filter-item"><label>生效月份</label><input type="month"></div><div class="filter-item"><label>员工</label><input placeholder="工号/姓名"></div></div>'
+  + '<div class="table-container"><table><thead><tr><th>调薪单号</th><th>工号</th><th>姓名</th><th>部门</th><th>职级</th><th>调薪类型</th><th>调薪项目明细</th><th>生效月份</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+  + '<div style="margin-top:12px;display:flex;gap:16px;font-size:13px"><div style="background:#fff;padding:12px 16px;border-radius:8px;flex:1;text-align:center"><div style="color:#9ca3af;font-size:12px">本月调薪</div><div style="font-size:20px;font-weight:700;color:#1e293b">4</div></div><div style="background:#fff;padding:12px 16px;border-radius:8px;flex:1;text-align:center"><div style="color:#9ca3af;font-size:12px">平均调幅</div><div style="font-size:20px;font-weight:700;color:#16a34a">+8.5%</div></div><div style="background:#fff;padding:12px 16px;border-radius:8px;flex:1;text-align:center"><div style="color:#9ca3af;font-size:12px">待审批</div><div style="font-size:20px;font-weight:700;color:#f59e0b">2</div></div><div style="background:#fff;padding:12px 16px;border-radius:8px;flex:1;text-align:center"><div style="color:#9ca3af;font-size:12px">已生效</div><div style="font-size:20px;font-weight:700;color:#16a34a">1</div></div></div>';
+}
+function openAdjustForm() {
+  var html = '<div class="modal-title">新增调薪申请</div><div class="modal-close" onclick="closeModal()">×</div>'
+  + '<div class="form-grid"><div class="form-group"><label>员工工号 <span class="req">*</span></label><input data-required="true" placeholder="请输入工号"></div><div class="form-group"><label>员工姓名</label><input disabled placeholder="自动带出"></div><div class="form-group"><label>调薪类型 <span class="req">*</span></label><select data-required="true"><option value="">请选择</option><option>晋升调薪</option><option>年度普调</option><option>转正调薪</option><option>特殊调薪</option><option>降薪调薪</option></select></div></div>'
+  + '<div class="form-grid" style="margin-top:12px"><div class="form-group"><label>当前职级</label><input value="P6" disabled></div><div class="form-group"><label>生效月份 <span class="req">*</span></label><input type="month" data-required="true" value="2026-09"></div><div class="form-group"><label>附件</label><input type="file"></div></div>'
+  + '<div style="margin-top:16px"><div class="form-section-title">调薪原因 <span class="req" style="color:#ef4444">*</span></div><div class="form-group"><textarea rows="3" data-required="true" placeholder="请详细说明调薪原因"></textarea></div></div>'
+  + '<div style="margin-top:16px"><div class="form-section-title">调薪项目明细</div><div class="table-container"><table><thead><tr><th>薪资项目</th><th>调整前金额</th><th>调整后金额</th><th>调整幅度</th></tr></thead><tbody><tr><td>基本工资</td><td><input type="number" value="15000" style="width:100px" onchange="this.parentElement.parentElement.querySelector(\'td:nth-child(4)\').textContent=Math.round((this.parentElement.parentElement.querySelector(\'td:nth-child(3) input\').value-this.value)/this.value*100)+\'%\'"></td><td><input type="number" value="18000" style="width:100px"></td><td>+20%</td></tr><tr><td>岗位津贴</td><td><input type="number" value="5000" style="width:100px"></td><td><input type="number" value="6000" style="width:100px"></td><td>+20%</td></tr></tbody></table></div><div class="add-row-btn" onclick="showToast(\'添加调薪项目\')">+ 添加项目</div></div>'
+  + '<div style="margin-top:20px;text-align:right"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px">取消</button><button class="btn-primary" onclick="closeModal();showToast(\'调薪申请已提交，等待审批\')">提交审批</button></div>';
+  openModal(html, true);
+}
+function openAdjustDetail(id) {
+  var r = adjustData.find(function(a){return a.id===id;});
+  if(!r) return;
+  var html = '<div class="modal-title">调薪详情 - '+r.id+'</div><div class="modal-close" onclick="closeModal()">×</div>'
+  + '<div class="info-grid"><div class="info-item"><div class="info-label">员工</div><div class="info-value">'+r.empId+' '+r.name+'</div></div><div class="info-item"><div class="info-label">部门/序列</div><div class="info-value">'+r.dept+' / '+r.seq+'</div></div><div class="info-item"><div class="info-label">当前职级</div><div class="info-value">'+r.level+'</div></div><div class="info-item"><div class="info-label">调薪类型</div><div class="info-value">'+r.type+'</div></div><div class="info-item"><div class="info-label">生效月份</div><div class="info-value">'+r.effectMonth+'</div></div><div class="info-item"><div class="info-label">审批状态</div><div class="info-value"><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></div></div></div>'
+  + '<div style="margin-top:16px"><div class="form-section-title">调薪原因</div><p style="font-size:13px;color:#4b5563">'+r.reason+'</p></div>'
+  + '<div style="margin-top:16px"><div class="form-section-title">调薪项目明细</div><div class="table-container"><table><thead><tr><th>薪资项目</th><th>调整前</th><th>调整后</th><th>幅度</th></tr></thead><tbody><tr><td>基本工资</td><td>15,000</td><td>18,000</td><td style="color:#16a34a">+20%</td></tr><tr><td>岗位津贴</td><td>5,000</td><td>6,000</td><td style="color:#16a34a">+20%</td></tr></tbody></table></div></div>'
+  + '<div style="margin-top:16px"><div class="form-section-title">审批记录</div><div style="font-size:13px;color:#4b5563"><div style="padding:8px 0;border-bottom:1px solid #f3f4f6">部门负责人 张经理 — 2026-07-16 — 同意晋升调薪</div><div style="padding:8px 0;border-bottom:1px solid #f3f4f6">HR总监 李总 — 2026-07-17 — 审批通过</div><div style="padding:8px 0">分管领导 王总 — 2026-07-18 — 批准</div></div></div>';
+  openModal(html, true);
+}
+
+// ---- 其他工资项目 ----
+var payOtherTab = 'bonus';
+var bonusData = [
+  {id:'BNS-202607-0001',type:'项目奖金',name:'2026年Q2项目交付奖金',month:'2026-07',scope:'研发部 15人',amount:45000,taxWay:'并入当月工资计税',status:'已录入'},
+  {id:'BNS-202607-0002',type:'满勤奖',name:'7月全员满勤奖',month:'2026-07',scope:'全公司 128人',amount:500,taxWay:'并入当月工资计税',status:'已录入'},
+  {id:'BNS-202607-0003',type:'销售提成',name:'Q2销售提成-华东区',month:'2026-07',scope:'市场部 5人',amount:28000,taxWay:'并入当月工资计税',status:'待审核'}
+];
+var deductionData = [
+  {id:'DED-202607-0001',type:'违纪罚款',name:'7月违纪罚款',month:'2026-07',emp:'E002 李四',amount:200,reason:'违反公司规章制度',preTax:false,installment:false,status:'已录入'},
+  {id:'DED-202607-0002',type:'预借款扣回',name:'预借款第3期扣回',month:'2026-07',emp:'E006 孙八',amount:1000,reason:'个人借款分期扣回',preTax:false,installment:true,status:'已录入'}
+];
+var subsidyData = [
+  {id:'SUB-202607-0001',type:'高温补贴',name:'2026年夏季高温补贴',month:'2026-07',scope:'全公司户外岗位 86人',amount:300,tax:true,cycle:'按月发放(6-9月)',status:'已录入'},
+  {id:'SUB-202607-0002',type:'外派补贴',name:'海外项目外派补贴',month:'2026-07',scope:'海外项目组 8人',amount:3000,tax:true,cycle:'一次性',status:'已录入'}
+];
+var compensationData = [
+  {id:'CMP-202607-0001',type:'经济补偿金',emp:'E099 陈某',amount:56000,month:'2026-07',basis:'N+1经济补偿，工作年限5年，月均工资8000元',taxWay:'免税',status:'已审批'}
+];
+function renderPayOther() {
+  var tabHtml = '<div class="tab-bar"><div class="tab-item '+(payOtherTab==='bonus'?'active':'')+'" onclick="payOtherTab=\'bonus\';renderPage()">奖金</div><div class="tab-item '+(payOtherTab==='deduction'?'active':'')+'" onclick="payOtherTab=\'deduction\';renderPage()">扣款</div><div class="tab-item '+(payOtherTab==='subsidy'?'active':'')+'" onclick="payOtherTab=\'subsidy\';renderPage()">补贴</div><div class="tab-item '+(payOtherTab==='compensation'?'active':'')+'" onclick="payOtherTab=\'compensation\';renderPage()">补偿金</div></div>';
+  var content = '';
+  if(payOtherTab==='bonus') {
+    var rows = bonusData.map(function(r){return '<tr><td>'+r.id+'</td><td><span class="badge badge-blue">'+r.type+'</span></td><td>'+r.name+'</td><td>'+r.month+'</td><td>'+r.scope+'</td><td style="text-align:right">'+r.amount.toLocaleString()+'元</td><td>'+r.taxWay+'</td><td><span class="badge badge-green">'+r.status+'</span></td><td><span class="op-link" onclick="showToast(\'查看详情\')">查看</span></td></tr>';}).join('');
+    content = '<div class="page-header"><h1 class="page-title">奖金录入</h1><div><button class="btn-secondary" onclick="showToast(\'模板已下载\')" style="margin-right:8px">下载模板</button><button class="btn-primary" onclick="showToast(\'新增奖金记录\')">+ 新增奖金</button></div></div><div class="table-container"><table><thead><tr><th>编号</th><th>类型</th><th>名称</th><th>发放月份</th><th>员工范围</th><th style="text-align:right">金额</th><th>计税方式</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  } else if(payOtherTab==='deduction') {
+    var rows = deductionData.map(function(r){return '<tr><td>'+r.id+'</td><td><span class="badge badge-red">'+r.type+'</span></td><td>'+r.name+'</td><td>'+r.month+'</td><td>'+r.emp+'</td><td style="text-align:right">'+r.amount.toLocaleString()+'元</td><td style="font-size:12px">'+r.reason+'</td><td>'+(r.preTax?'是':'否')+'</td><td>'+(r.installment?'<span class="badge badge-yellow">分期</span>':'一次性')+'</td><td><span class="badge badge-green">'+r.status+'</span></td></tr>';}).join('');
+    content = '<div class="page-header"><h1 class="page-title">扣款录入</h1><button class="btn-primary" onclick="showToast(\'新增扣款记录\')">+ 新增扣款</button></div><div class="table-container"><table><thead><tr><th>编号</th><th>类型</th><th>名称</th><th>月份</th><th>员工</th><th style="text-align:right">金额</th><th>原因</th><th>税前</th><th>分期</th><th>状态</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  } else if(payOtherTab==='subsidy') {
+    var rows = subsidyData.map(function(r){return '<tr><td>'+r.id+'</td><td><span class="badge badge-green">'+r.type+'</span></td><td>'+r.name+'</td><td>'+r.month+'</td><td>'+r.scope+'</td><td style="text-align:right">'+r.amount.toLocaleString()+'元</td><td>'+(r.tax?'是':'否')+'</td><td>'+r.cycle+'</td><td><span class="badge badge-green">'+r.status+'</span></td></tr>';}).join('');
+    content = '<div class="page-header"><h1 class="page-title">补贴录入</h1><button class="btn-primary" onclick="showToast(\'新增补贴记录\')">+ 新增补贴</button></div><div class="table-container"><table><thead><tr><th>编号</th><th>类型</th><th>名称</th><th>月份</th><th>员工范围</th><th style="text-align:right">金额</th><th>计税</th><th>发放周期</th><th>状态</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  } else {
+    var rows = compensationData.map(function(r){return '<tr><td>'+r.id+'</td><td><span class="badge badge-purple">'+r.type+'</span></td><td>'+r.emp+'</td><td style="text-align:right">'+r.amount.toLocaleString()+'元</td><td>'+r.month+'</td><td style="font-size:12px;max-width:200px">'+r.basis+'</td><td>'+r.taxWay+'</td><td><span class="badge badge-green">'+r.status+'</span></td><td><span class="op-link" onclick="showToast(\'查看详情\')">查看</span></td></tr>';}).join('');
+    content = '<div class="page-header"><h1 class="page-title">补偿金录入</h1><button class="btn-primary" onclick="showToast(\'新增补偿金记录\')">+ 新增补偿金</button></div><div class="table-container"><table><thead><tr><th>编号</th><th>类型</th><th>员工</th><th style="text-align:right">金额</th><th>月份</th><th>计算依据</th><th>计税方式</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  return tabHtml + content;
+}
+
+// ---- 社保公积金 ----
+var insuranceTab = 'config';
+var insuranceConfigData = [
+  {id:'INS-001',name:'养老保险',type:'社保',personal:8,company:16,lower:4000,upper:20000,region:'北京',status:'启用'},
+  {id:'INS-002',name:'医疗保险',type:'社保',personal:2,company:9.8,lower:4000,upper:20000,region:'北京',status:'启用'},
+  {id:'INS-003',name:'失业保险',type:'社保',personal:0.5,company:0.5,lower:4000,upper:20000,region:'北京',status:'启用'},
+  {id:'INS-004',name:'工伤保险',type:'社保',personal:0,company:0.4,lower:4000,upper:20000,region:'北京',status:'启用'},
+  {id:'INS-005',name:'生育保险',type:'社保',personal:0,company:0.8,lower:4000,upper:20000,region:'北京',status:'启用'},
+  {id:'INS-006',name:'住房公积金',type:'公积金',personal:12,company:12,lower:2400,upper:20000,region:'北京',status:'启用'},
+  {id:'INS-007',name:'养老保险',type:'社保',personal:8,company:16,lower:3500,upper:18000,region:'上海',status:'启用'},
+  {id:'INS-008',name:'住房公积金',type:'公积金',personal:7,company:7,lower:2300,upper:18000,region:'上海',status:'启用'}
+];
+var insuranceBaseData = [
+  {empId:'E001',name:'张三',region:'北京',socialBase:18000,fundBase:18000,year:2026,status:'已审核'},
+  {empId:'E002',name:'李四',region:'北京',socialBase:15000,fundBase:15000,year:2026,status:'已审核'},
+  {empId:'E003',name:'王五',region:'上海',socialBase:16000,fundBase:16000,year:2026,status:'已审核'},
+  {empId:'E004',name:'赵六',region:'北京',socialBase:12000,fundBase:12000,year:2026,status:'待审核'},
+  {empId:'E005',name:'钱七',region:'北京',socialBase:20000,fundBase:20000,year:2026,status:'已审核'}
+];
+var insuranceDetailData = [
+  {empId:'E001',name:'张三',month:'2026-07',region:'北京',socialBase:18000,fundBase:18000,pension_p:1440,pension_c:2880,medical_p:360,medical_c:1764,unemp_p:90,unemp_c:90,injury_c:72,maternity_c:144,fund_p:2160,fund_c:2160,personalTotal:4050,companyTotal:7110},
+  {empId:'E002',name:'李四',month:'2026-07',region:'北京',socialBase:15000,fundBase:15000,pension_p:1200,pension_c:2400,medical_p:300,medical_c:1470,unemp_p:75,unemp_c:75,injury_c:60,maternity_c:120,fund_p:1800,fund_c:1800,personalTotal:3375,fund_c:1800,companyTotal:5925},
+  {empId:'E003',name:'王五',month:'2026-07',region:'上海',socialBase:16000,fundBase:16000,pension_p:1280,pension_c:2560,medical_p:320,medical_c:1568,unemp_p:80,unemp_c:80,injury_c:64,maternity_c:128,fund_p:1120,fund_c:1120,personalTotal:2800,companyTotal:5472}
+];
+function renderPayInsurance() {
+  var tabHtml = '<div class="tab-bar"><div class="tab-item '+(insuranceTab==='config'?'active':'')+'" onclick="insuranceTab=\'config\';renderPage()">项目配置</div><div class="tab-item '+(insuranceTab==='base'?'active':'')+'" onclick="insuranceTab=\'base\';renderPage()">基数申报</div><div class="tab-item '+(insuranceTab==='detail'?'active':'')+'" onclick="insuranceTab=\'detail\';renderPage()">缴纳明细</div></div>';
+  if(insuranceTab==='base') {
+    var rows = insuranceBaseData.map(function(r){return '<tr><td>'+r.empId+'</td><td>'+r.name+'</td><td>'+r.region+'</td><td style="text-align:right">'+r.socialBase.toLocaleString()+'</td><td style="text-align:right">'+r.fundBase.toLocaleString()+'</td><td>'+r.year+'</td><td><span class="badge '+(r.status==='已审核'?'badge-green':'badge-yellow')+'">'+r.status+'</span></td><td><span class="op-link" onclick="showToast(\'编辑基数\')">编辑</span></td></tr>';}).join('');
+    return tabHtml + '<div class="page-header"><h1 class="page-title">基数申报</h1><div><button class="btn-secondary" onclick="showToast(\'模板已下载\')" style="margin-right:8px">批量导入</button><button class="btn-primary" onclick="showToast(\'新增基数申报\')">+ 手动录入</button></div></div><div class="table-container"><table><thead><tr><th>工号</th><th>姓名</th><th>缴纳地</th><th style="text-align:right">社保基数</th><th style="text-align:right">公积金基数</th><th>申报年度</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  if(insuranceTab==='detail') {
+    var rows = insuranceDetailData.map(function(r){return '<tr><td>'+r.empId+'</td><td>'+r.name+'</td><td>'+r.month+'</td><td>'+r.region+'</td><td style="text-align:right">'+r.pension_p.toLocaleString()+' / '+r.pension_c.toLocaleString()+'</td><td style="text-align:right">'+r.medical_p.toLocaleString()+' / '+r.medical_c.toLocaleString()+'</td><td style="text-align:right">'+r.unemp_p.toLocaleString()+' / '+r.unemp_c.toLocaleString()+'</td><td style="text-align:right">— / '+r.injury_c.toLocaleString()+'</td><td style="text-align:right">— / '+r.maternity_c.toLocaleString()+'</td><td style="text-align:right">'+r.fund_p.toLocaleString()+' / '+r.fund_c.toLocaleString()+'</td><td style="text-align:right;font-weight:600;color:#dc2626">'+r.personalTotal.toLocaleString()+'</td><td style="text-align:right;font-weight:600;color:#1d4ed8">'+r.companyTotal.toLocaleString()+'</td></tr>';}).join('');
+    return tabHtml + '<div class="page-header"><h1 class="page-title">缴纳明细</h1><button class="btn-secondary" onclick="showToast(\'导出缴纳明细（触发审计告警）\')">导出</button></div><div class="filter-bar"><div class="filter-item"><label>缴纳月份</label><input type="month" value="2026-07"></div><div class="filter-item"><label>缴纳地</label><select><option>全部</option><option>北京</option><option>上海</option><option>深圳</option></select></div><div class="filter-item"><label>员工</label><input placeholder="工号/姓名"></div></div><div class="table-container" style="overflow-x:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>月份</th><th>缴纳地</th><th style="text-align:right">养老(个/司)</th><th style="text-align:right">医疗(个/司)</th><th style="text-align:right">失业(个/司)</th><th style="text-align:right">工伤(司)</th><th style="text-align:right">生育(司)</th><th style="text-align:right">公积金(个/司)</th><th style="text-align:right">个人合计</th><th style="text-align:right">公司合计</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  var rows = insuranceConfigData.map(function(r){return '<tr><td>'+r.id+'</td><td>'+r.name+'</td><td><span class="badge '+(r.type==='社保'?'badge-blue':'badge-purple')+'">'+r.type+'</span></td><td style="text-align:right">'+r.personal+'%</td><td style="text-align:right">'+r.company+'%</td><td style="text-align:right">'+r.lower.toLocaleString()+'</td><td style="text-align:right">'+r.upper.toLocaleString()+'</td><td>'+r.region+'</td><td><span class="badge badge-green">'+r.status+'</span></td><td><span class="op-link" onclick="showToast(\'编辑配置\')">编辑</span></td></tr>';}).join('');
+  return tabHtml + '<div class="page-header"><h1 class="page-title">社保公积金项目配置</h1><button class="btn-primary" onclick="showToast(\'新增项目配置\')">+ 新增项目</button></div><div class="filter-bar"><div class="filter-item"><label>项目类型</label><select><option>全部</option><option>社保</option><option>公积金</option></select></div><div class="filter-item"><label>适用地区</label><select><option>全部</option><option>北京</option><option>上海</option><option>深圳</option></select></div></div><div class="table-container"><table><thead><tr><th>编号</th><th>项目名称</th><th>类型</th><th style="text-align:right">个人比例</th><th style="text-align:right">公司比例</th><th style="text-align:right">基数下限</th><th style="text-align:right">基数上限</th><th>地区</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ---- 工资计算核算 ----
+var payCalcStep = 'check';
+function renderPayCalc() {
+  var stepBar = '<div style="display:flex;gap:4px;margin-bottom:20px"><div style="flex:1;text-align:center;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;'+(payCalcStep==='check'?'background:#3b82f6;color:#fff':'background:#fff;color:#6b7280;border:1px solid #e5e7eb')+'" onclick="payCalcStep=\'check\';renderPage()">① 前置检查</div><div style="flex:1;text-align:center;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;'+(payCalcStep==='result'?'background:#3b82f6;color:#fff':'background:#fff;color:#6b7280;border:1px solid #e5e7eb')+'" onclick="payCalcStep=\'result\';renderPage()">② 算薪结果</div><div style="flex:1;text-align:center;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;'+(payCalcStep==='audit'?'background:#3b82f6;color:#fff':'background:#fff;color:#6b7280;border:1px solid #e5e7eb')+'" onclick="payCalcStep=\'audit\';renderPage()">③ 审核确认</div></div>';
+  if(payCalcStep==='check') {
+    var checks = [
+      {item:'考勤数据完整性',content:'当月考勤数据已全部归集并确认',result:'pass'},
+      {item:'绩效数据完整性',content:'当月/当季绩效考核已完成并发布',result:'pass'},
+      {item:'薪资录入完成度',content:'所有手工项薪资数据已录入并保存',result:'pass'},
+      {item:'社保基数有效性',content:'所有员工社保/公积金基数在有效期内',result:'pass'},
+      {item:'调薪生效检查',content:'当月生效的调薪记录已全部处理',result:'pass'},
+      {item:'人员变动同步',content:'当月入职3人/离职1人/调动2人已同步',result:'warn'},
+      {item:'公式有效性',content:'所有公式项计算公式有效，无循环引用',result:'pass'}
+    ];
+    var checkRows = checks.map(function(c){return '<tr><td>'+c.item+'</td><td>'+c.content+'</td><td><span class="badge '+(c.result==='pass'?'badge-green':'badge-yellow')+'">'+(c.result==='pass'?'通过':'告警')+'</span></td></tr>';}).join('');
+    return stepBar + '<div class="page-header"><h1 class="page-title">工资计算与核算 - 2026年7月</h1></div><div style="background:#fff;border-radius:8px;padding:20px;margin-bottom:16px"><h3 style="font-size:15px;margin-bottom:12px">前置条件检查</h3><div class="table-container"><table><thead><tr><th>检查项</th><th>检查内容</th><th>结果</th></tr></thead><tbody>'+checkRows+'</tbody></table></div><div style="margin-top:16px;display:flex;gap:12px"><button class="btn-secondary" onclick="showToast(\'重新检查中...\')">重新检查</button><button class="btn-primary" onclick="payCalcStep=\'result\';renderPage();showToast(\'一键算薪执行中，请稍候...\')">执行一键算薪</button></div></div>';
+  }
+  if(payCalcStep==='result') {
+    var emps = payEntryEmployees.map(function(emp){var c=calcPayEntry(emp);return {empId:emp.empId,name:emp.name,dept:emp.dept,basic:emp.basic,post:emp.post,allowance:emp.transport+emp.meal,bonus:emp.fullAtt+emp.perfBonus,overtime:emp.overtimeWd+emp.overtimeWe+emp.overtimeHol,dedLeave:emp.latDed+emp.absDed+emp.leaveDed+emp.sickDed,social:emp.socialDed,fund:emp.fundDed,tax:emp.taxDed,gross:c.gross,totalDed:c.totalDed,net:c.net};});
+    var rows = emps.map(function(e){var netClass=e.net<10000?'color:#f59e0b':'';return '<tr><td>'+e.empId+'</td><td>'+e.name+'</td><td>'+e.dept+'</td><td style="text-align:right">'+e.basic.toLocaleString()+'</td><td style="text-align:right">'+e.post.toLocaleString()+'</td><td style="text-align:right">'+e.allowance.toLocaleString()+'</td><td style="text-align:right">'+e.bonus.toLocaleString()+'</td><td style="text-align:right">'+e.overtime.toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+e.dedLeave.toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+e.social.toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+e.fund.toLocaleString()+'</td><td style="text-align:right;color:#dc2626">'+e.tax.toLocaleString()+'</td><td style="text-align:right;font-weight:600">'+e.gross.toLocaleString()+'</td><td style="text-align:right;font-weight:700;'+netClass+'">'+e.net.toLocaleString()+'</td><td><span class="op-link" onclick="openPayCalcAdjust(\''+e.empId+'\')">调整</span></td></tr>';}).join('');
+    var tG=0,tD=0,tN=0;emps.forEach(function(e){tG+=e.gross;tD+=e.totalDed;tN+=e.net;});
+    return stepBar + '<div class="page-header"><h1 class="page-title">算薪结果 - 2026年7月</h1><div><button class="btn-secondary" onclick="showToast(\'导出工资表\')" style="margin-right:8px">导出</button><button class="btn-primary" onclick="payCalcStep=\'audit\';renderPage()">提交审核</button></div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;gap:24px;font-size:13px"><span>人数：<b>'+emps.length+'</b></span><span>应发总额：<b style="color:#16a34a">'+tG.toLocaleString()+'</b></span><span>扣款总额：<b style="color:#dc2626">'+tD.toLocaleString()+'</b></span><span>实发总额：<b style="color:#1d4ed8">'+tN.toLocaleString()+'</b></span><span>较上月：<b style="color:#16a34a">+3.2%</b></span></div>'
+    + '<div class="table-container" style="overflow-x:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th style="text-align:right">基本工资</th><th style="text-align:right">岗位津贴</th><th style="text-align:right">补贴</th><th style="text-align:right">奖金</th><th style="text-align:right">加班费</th><th style="text-align:right">请假扣款</th><th style="text-align:right">社保</th><th style="text-align:right">公积金</th><th style="text-align:right">个税</th><th style="text-align:right">应发</th><th style="text-align:right">实发</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  return stepBar + '<div class="page-header"><h1 class="page-title">审核确认 - 2026年7月</h1></div>'
+  + '<div style="background:#fff;border-radius:8px;padding:20px"><div style="margin-bottom:20px"><h3 style="font-size:15px;margin-bottom:12px">审核流程</h3><div style="display:flex;gap:16px"><div style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:16px;text-align:center"><div style="font-size:13px;color:#9ca3af">初审</div><div style="font-weight:600;margin:4px 0">HR薪酬专员</div><div><span class="badge badge-yellow">待审核</span></div></div><div style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:16px;text-align:center"><div style="font-size:13px;color:#9ca3af">复审</div><div style="font-weight:600;margin:4px 0">HR主管</div><div><span class="badge badge-gray">等待中</span></div></div><div style="flex:1;border:1px solid #d1d5db;border-radius:8px;padding:16px;text-align:center"><div style="font-size:13px;color:#9ca3af">终审</div><div style="font-weight:600;margin:4px 0">HR总监</div><div><span class="badge badge-gray">等待中</span></div></div></div></div>'
+  + '<div style="margin-bottom:20px"><h3 style="font-size:15px;margin-bottom:12px">汇总数据</h3><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px"><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">应发总额</div><div style="font-size:18px;font-weight:700;color:#16a34a">892,400</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">扣款总额</div><div style="font-size:18px;font-weight:700;color:#dc2626">234,800</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">个税总额</div><div style="font-size:18px;font-weight:700;color:#f59e0b">56,200</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">实发总额</div><div style="font-size:18px;font-weight:700;color:#1d4ed8">601,400</div></div></div></div>'
+  + '<div style="text-align:right"><button class="btn-secondary" onclick="showToast(\'已退回修改\')" style="margin-right:8px">退回修改</button><button class="btn-primary" onclick="showToast(\'初审通过，已转复审\')">初审通过</button></div></div>';
+}
+function openPayCalcAdjust(empId) {
+  var emp = payEntryEmployees.find(function(e){return e.empId===empId;});
+  if(!emp) return;
+  var html = '<div class="modal-title">手动调整 - '+emp.name+' ('+emp.empId+')</div><div class="modal-close" onclick="closeModal()">×</div>'
+  + '<div style="background:#fef9c3;padding:10px;border-radius:6px;font-size:12px;color:#854d0e;margin-bottom:16px">注意：系统项（考勤/绩效数据）不可直接调整，如需调整须退回对应模块修改源头数据</div>'
+  + '<div class="table-container"><table><thead><tr><th>薪资项目</th><th>当前值</th><th>调整后</th><th>类型</th></tr></thead><tbody>'
+  + '<tr><td>基本工资</td><td>'+emp.basic.toLocaleString()+'</td><td><input type="number" value="'+emp.basic+'" style="width:100px"></td><td><span class="badge badge-blue">固定项</span></td></tr>'
+  + '<tr><td>岗位津贴</td><td>'+emp.post.toLocaleString()+'</td><td><input type="number" value="'+emp.post+'" style="width:100px"></td><td><span class="badge badge-blue">固定项</span></td></tr>'
+  + '<tr><td>绩效奖金</td><td>'+emp.perfBonus.toLocaleString()+'</td><td style="color:#9ca3af">不可调整</td><td><span class="badge badge-green">系统项</span></td></tr>'
+  + '<tr><td>社保个人扣款</td><td>'+emp.socialDed.toLocaleString()+'</td><td style="color:#9ca3af">不可调整</td><td><span class="badge badge-purple">公式项</span></td></tr>'
+  + '</tbody></table></div>'
+  + '<div class="form-group" style="margin-top:16px"><label>调整原因 <span class="req">*</span></label><textarea rows="3" data-required="true" placeholder="请填写调整原因（必填）"></textarea></div>'
+  + '<div style="margin-top:20px;text-align:right"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px">取消</button><button class="btn-primary" onclick="closeModal();showToast(\'调整已保存，关联项目已自动重算\')">保存调整</button></div>';
+  openModal(html, true);
+}
+
+// ---- 工资发放 ----
+var payDispatchTab = 'list';
+function renderPayDispatch() {
+  var tabHtml = '<div class="tab-bar"><div class="tab-item '+(payDispatchTab==='list'?'active':'')+'" onclick="payDispatchTab=\'list\';renderPage()">发放清单</div><div class="tab-item '+(payDispatchTab==='bank'?'active':'')+'" onclick="payDispatchTab=\'bank\';renderPage()">银行代发</div><div class="tab-item '+(payDispatchTab==='slip'?'active':'')+'" onclick="payDispatchTab=\'slip\';renderPage()">工资条</div></div>';
+  if(payDispatchTab==='bank') {
+    return tabHtml + '<div class="page-header"><h1 class="page-title">银行代发文件</h1><button class="btn-primary" onclick="showToast(\'代发文件已生成\')">生成代发文件</button></div>'
+    + '<div class="filter-bar"><div class="filter-item"><label>发放月份</label><input type="month" value="2026-07"></div><div class="filter-item"><label>银行</label><select><option>全部</option><option>工商银行</option><option>建设银行</option><option>招商银行</option></select></div></div>'
+    + '<div class="table-container"><table><thead><tr><th>文件名</th><th>银行</th><th>格式</th><th>笔数</th><th style="text-align:right">总金额</th><th>生成时间</th><th>状态</th><th>操作</th></tr></thead><tbody>'
+    + '<tr><td>代发_工商银行_202607.csv</td><td>工商银行</td><td>CSV/UTF-8</td><td>1,205</td><td style="text-align:right">458,200.00</td><td>2026-07-28 14:30</td><td><span class="badge badge-green">已生成</span></td><td><span class="op-link" onclick="showToast(\'下载文件（触发审计告警）\')">下载</span><span class="op-link" onclick="showToast(\'预览文件内容\')">预览</span></td></tr>'
+    + '<tr><td>代发_建设银行_202607.txt</td><td>建设银行</td><td>TXT/GBK</td><td>320</td><td style="text-align:right">112,800.00</td><td>2026-07-28 14:30</td><td><span class="badge badge-green">已生成</span></td><td><span class="op-link" onclick="showToast(\'下载文件（触发审计告警）\')">下载</span><span class="op-link" onclick="showToast(\'预览文件内容\')">预览</span></td></tr>'
+    + '<tr><td>代发_招商银行_202607.csv</td><td>招商银行</td><td>CSV/UTF-8</td><td>130</td><td style="text-align:right">30,400.00</td><td>2026-07-28 14:31</td><td><span class="badge badge-yellow">待确认</span></td><td><span class="op-link" onclick="showToast(\'下载文件\')">下载</span></td></tr>'
+    + '</tbody></table></div>'
+    + '<div style="margin-top:16px"><div class="form-section-title">文件格式配置</div><div class="table-container"><table><thead><tr><th>银行</th><th>格式</th><th>编码</th><th>分隔符</th><th>金额单位</th><th>操作</th></tr></thead><tbody><tr><td>工商银行</td><td>CSV</td><td>UTF-8</td><td>逗号</td><td>元</td><td><span class="op-link">编辑</span></td></tr><tr><td>建设银行</td><td>TXT</td><td>GBK</td><td>制表符</td><td>元</td><td><span class="op-link">编辑</span></td></tr><tr><td>招商银行</td><td>CSV</td><td>UTF-8</td><td>逗号</td><td>分</td><td><span class="op-link">编辑</span></td></tr></tbody></table></div></div>';
+  }
+  if(payDispatchTab==='slip') {
+    return tabHtml + '<div class="page-header"><h1 class="page-title">工资条推送</h1><button class="btn-primary" onclick="showToast(\'工资条已推送至全员\')">推送工资条</button></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;margin-bottom:16px"><div style="display:flex;gap:16px;font-size:13px"><span>发放月份：<b>2026年7月</b></span><span>推送方式：<b>企业微信 + 邮件</b></span><span>推送状态：<span class="badge badge-yellow">待推送</span></span></div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px"><div class="form-section-title">工资条预览（脱敏）</div>'
+    + '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;max-width:400px;margin:0 auto;background:#f8fafc"><div style="text-align:center;font-weight:700;font-size:15px;margin-bottom:12px;color:#1e293b">HR Compass 工资条</div><div style="font-size:12px;color:#6b7280;margin-bottom:8px">薪资月份：2026年7月</div><div style="border-top:1px dashed #d1d5db;padding-top:8px;margin-bottom:8px"><div style="font-size:11px;color:#9ca3af;margin-bottom:4px">收入明细</div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>基本工资</span><span>15,000.00</span></div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>岗位津贴</span><span>5,000.00</span></div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>绩效奖金</span><span>6,000.00</span></div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>其他补贴</span><span>1,800.00</span></div></div><div style="border-top:1px dashed #d1d5db;padding-top:8px;margin-bottom:8px"><div style="font-size:11px;color:#9ca3af;margin-bottom:4px">扣款明细</div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>社保个人</span><span style="color:#dc2626">-3,200.00</span></div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>公积金个人</span><span style="color:#dc2626">-1,800.00</span></div><div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0"><span>个人所得税</span><span style="color:#dc2626">-890.00</span></div></div><div style="border-top:2px solid #3b82f6;padding-top:8px;display:flex;justify-content:space-between;font-weight:700;font-size:14px"><span>实发金额</span><span style="color:#1d4ed8">21,910.00</span></div><div style="margin-top:8px;font-size:11px;color:#9ca3af;text-align:center">查看需输入独立密码 | 累计个税：6,230.00</div></div></div>';
+  }
+  var dispatchList = payEntryEmployees.map(function(emp){var c=calcPayEntry(emp);return {empId:emp.empId,name:emp.name,dept:emp.dept,bank:'工商银行 ****'+Math.floor(1000+Math.random()*9000),net:c.net,status:emp.empId==='E006'?'发放失败':'已发放'};});
+  var rows = dispatchList.map(function(d){return '<tr><td>'+d.empId+'</td><td>'+d.name+'</td><td>'+d.dept+'</td><td>'+d.bank+'</td><td style="text-align:right;font-weight:600">'+d.net.toLocaleString()+'</td><td><span class="badge '+(d.status==='已发放'?'badge-green':'badge-red')+'">'+d.status+'</span></td><td><span class="op-link" onclick="showToast(\'查看详情\')">查看</span>'+(d.status==='发放失败'?'<span class="op-link" onclick="showToast(\'请修正银行账号后重新发放\')">重发</span>':'')+'</td></tr>';}).join('');
+  return tabHtml + '<div class="page-header"><h1 class="page-title">发放清单 - 2026年7月</h1><div><button class="btn-secondary" onclick="showToast(\'导出清单（触发审计告警）\')" style="margin-right:8px">导出</button><button class="btn-primary" onclick="showToast(\'已提交财务复核\')">提交财务复核</button></div></div>'
+  + '<div style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;gap:24px;font-size:13px"><span>发放人数：<b>'+dispatchList.length+'</b></span><span>实发总额：<b style="color:#1d4ed8">'+dispatchList.reduce(function(s,d){return s+d.net;},0).toLocaleString()+'</b></span><span>发放状态：<span class="badge badge-green">已发放 '+dispatchList.filter(function(d){return d.status==='已发放';}).length+'</span> <span class="badge badge-red">失败 '+dispatchList.filter(function(d){return d.status==='发放失败';}).length+'</span></span></div>'
+  + '<div class="table-container"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>银行账号</th><th style="text-align:right">实发金额</th><th>状态</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ---- 个税管理 ----
+var payTaxTab = 'calc';
+var taxBrackets = [
+  {level:1,range:'不超过36,000元',rate:'3%',deduction:0},
+  {level:2,range:'36,000 ~ 144,000元',rate:'10%',deduction:2520},
+  {level:3,range:'144,000 ~ 300,000元',rate:'20%',deduction:16920},
+  {level:4,range:'300,000 ~ 420,000元',rate:'25%',deduction:33920},
+  {level:5,range:'420,000 ~ 660,000元',rate:'30%',deduction:52920},
+  {level:6,range:'660,000 ~ 960,000元',rate:'35%',deduction:85920},
+  {level:7,range:'超过960,000元',rate:'45%',deduction:181920}
+];
+var specialDeductions = [
+  {empId:'E001',name:'张三',children:2,eduDed:4000,loanDed:1000,elderDed:3000,babyDed:0,total:8000},
+  {empId:'E002',name:'李四',children:1,eduDed:2000,loanDed:0,rentDed:1500,elderDed:1500,babyDed:2000,total:7000},
+  {empId:'E003',name:'王五',children:0,eduDed:0,loanDed:1000,elderDed:3000,babyDed:0,total:4000},
+  {empId:'E005',name:'钱七',children:3,eduDed:6000,loanDed:1000,elderDed:3000,babyDed:4000,total:14000},
+  {empId:'E007',name:'周九',children:1,eduDed:2000,contDed:400,loanDed:0,rentDed:1000,elderDed:1500,babyDed:0,total:4900}
+];
+var monthlyTaxData = [
+  {empId:'E001',name:'张三',month:'2026-07',cumIncome:168000,cumExempt:0,cumDeduct:42000,cumSpecial:56000,cumOther:0,cumTaxable:70000,cumTax:4480,cumPaid:3920,monthTax:560},
+  {empId:'E002',name:'李四',month:'2026-07',cumIncome:126000,cumExempt:0,cumDeduct:35000,cumSpecial:49000,cumOther:0,cumTaxable:42000,cumTax:1680,cumPaid:1440,monthTax:240},
+  {empId:'E003',name:'王五',month:'2026-07',cumIncome:154000,cumExempt:0,cumDeduct:42000,cumSpecial:28000,cumOther:0,cumTaxable:84000,cumTax:5880,cumPaid:5040,monthTax:840},
+  {empId:'E005',name:'钱七',month:'2026-07',cumIncome:210000,cumExempt:0,cumDeduct:42000,cumSpecial:98000,cumOther:0,cumTaxable:70000,cumTax:4480,cumPaid:3920,monthTax:560}
+];
+function renderPayTax() {
+  var tabHtml = '<div class="tab-bar"><div class="tab-item '+(payTaxTab==='calc'?'active':'')+'" onclick="payTaxTab=\'calc\';renderPage()">累计预扣计算</div><div class="tab-item '+(payTaxTab==='special'?'active':'')+'" onclick="payTaxTab=\'special\';renderPage()">专项附加扣除</div><div class="tab-item '+(payTaxTab==='declare'?'active':'')+'" onclick="payTaxTab=\'declare\';renderPage()">个税申报</div></div>';
+  if(payTaxTab==='special') {
+    var rows = specialDeductions.map(function(r){return '<tr><td>'+r.empId+'</td><td>'+r.name+'</td><td style="text-align:right">'+(r.children||0)+'</td><td style="text-align:right">'+(r.eduDed||0).toLocaleString()+'</td><td style="text-align:right">'+(r.contDed||0).toLocaleString()+'</td><td style="text-align:right">'+(r.loanDed||0).toLocaleString()+'</td><td style="text-align:right">'+(r.rentDed||0).toLocaleString()+'</td><td style="text-align:right">'+(r.elderDed||0).toLocaleString()+'</td><td style="text-align:right">'+(r.babyDed||0).toLocaleString()+'</td><td style="text-align:right;font-weight:600;color:#16a34a">'+r.total.toLocaleString()+'</td><td><span class="op-link" onclick="showToast(\'编辑扣除信息\')">编辑</span></td></tr>';}).join('');
+    return tabHtml + '<div class="page-header"><h1 class="page-title">专项附加扣除管理</h1><div><button class="btn-secondary" onclick="showToast(\'批量导入\')" style="margin-right:8px">批量导入</button><button class="btn-primary" onclick="showToast(\'新增扣除信息\')">+ 手动录入</button></div></div>'
+    + '<div style="background:#fef9c3;padding:10px;border-radius:6px;font-size:12px;color:#854d0e;margin-bottom:12px">扣除信息属于敏感数据，按薪酬数据安全等级管控。员工自行在税务APP申报，HR根据员工提供信息录入。</div>'
+    + '<div class="table-container" style="overflow-x:auto"><table><thead><tr><th>工号</th><th>姓名</th><th style="text-align:right">子女教育</th><th style="text-align:right">继续教育</th><th style="text-align:right">住房贷款</th><th style="text-align:right">住房租金</th><th style="text-align:right">赡养老人</th><th style="text-align:right">婴幼儿照护</th><th style="text-align:right">月扣除合计</th><th>操作</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    + '<div style="margin-top:12px;font-size:11px;color:#9ca3af">扣除标准：子女教育2000元/月/子女 | 继续教育400元/月或3600元/年 | 住房贷款1000元/月 | 住房租金800-1500元/月 | 赡养老人最高3000元/月 | 婴幼儿照护2000元/月/婴幼儿</div>';
+  }
+  if(payTaxTab==='declare') {
+    var rows = monthlyTaxData.map(function(r){return '<tr><td>'+r.empId+'</td><td>'+r.name+'</td><td>'+r.month+'</td><td style="text-align:right">'+r.cumIncome.toLocaleString()+'</td><td style="text-align:right">'+r.cumDeduct.toLocaleString()+'</td><td style="text-align:right">'+r.cumSpecial.toLocaleString()+'</td><td style="text-align:right">'+r.cumTaxable.toLocaleString()+'</td><td style="text-align:right">'+r.cumTax.toLocaleString()+'</td><td style="text-align:right">'+r.cumPaid.toLocaleString()+'</td><td style="text-align:right;font-weight:600;color:#dc2626">'+r.monthTax.toLocaleString()+'</td></tr>';}).join('');
+    return tabHtml + '<div class="page-header"><h1 class="page-title">个税申报数据</h1><button class="btn-primary" onclick="showToast(\'导出税务申报格式文件（触发审计告警）\')">导出申报数据</button></div>'
+    + '<div class="filter-bar"><div class="filter-item"><label>申报月份</label><input type="month" value="2026-07"></div><div class="filter-item"><label>员工</label><input placeholder="工号/姓名"></div></div>'
+    + '<div class="table-container" style="overflow-x:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>月份</th><th style="text-align:right">累计收入</th><th style="text-align:right">累计减除</th><th style="text-align:right">累计专项附加</th><th style="text-align:right">累计应纳税所得</th><th style="text-align:right">累计应纳税</th><th style="text-align:right">累计已预扣</th><th style="text-align:right">本月预扣</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    + '<div style="margin-top:12px;font-size:11px;color:#9ca3af">公式：本月预扣 = (累计应纳税所得额 × 预扣率 - 速算扣除数) - 累计减免 - 累计已预扣</div>';
+  }
+  var bracketRows = taxBrackets.map(function(b){return '<tr><td>'+b.level+'</td><td>'+b.range+'</td><td style="text-align:right">'+b.rate+'</td><td style="text-align:right">'+b.deduction.toLocaleString()+'</td></tr>';}).join('');
+  return tabHtml + '<div class="page-header"><h1 class="page-title">个税管理 - 累计预扣法</h1></div>'
+  + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px"><div style="background:#fff;border-radius:8px;padding:16px"><div class="form-section-title">计算公式</div><div style="font-size:12px;color:#4b5563;line-height:1.8;background:#f8fafc;padding:12px;border-radius:6px"><div>本月应预扣预缴税额 = （累计预扣预缴应纳税所得额 × 预扣率 - 速算扣除数）- 累计减免税额 - 累计已预扣预缴税额</div><div style="margin-top:8px">累计应纳税所得额 = 累计收入 - 累计免税收入 - 累计减除费用 - 累计专项扣除 - 累计专项附加扣除 - 累计其他扣除</div><div style="margin-top:8px">累计减除费用 = 5000元/月 × 当年截至本月在职月份数</div></div></div>'
+  + '<div style="background:#fff;border-radius:8px;padding:16px"><div class="form-section-title">预扣率表</div><div class="table-container"><table><thead><tr><th>级数</th><th>累计应纳税所得额</th><th style="text-align:right">预扣率</th><th style="text-align:right">速算扣除数</th></tr></thead><tbody>'+bracketRows+'</tbody></table></div></div></div>'
+  + '<div style="background:#fff;border-radius:8px;padding:16px"><div class="form-section-title">本月个税汇总（2026年7月）</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">纳税人数</div><div style="font-size:18px;font-weight:700">1,620</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">本月个税总额</div><div style="font-size:18px;font-weight:700;color:#dc2626">56,200</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">累计个税总额</div><div style="font-size:18px;font-weight:700">392,800</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">免税人数</div><div style="font-size:18px;font-weight:700">35</div></div></div><button class="btn-primary" onclick="payTaxTab=\'declare\';renderPage()">查看申报明细</button></div>';
+}
+
 // ============ PRD NOTES ============
 function renderPrd() {
   var c = document.getElementById('prdContent');
@@ -2266,7 +2618,62 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">生成触发时机</div>• 上级评价提交后 → 自动生成"上级评语"草稿<br>• 上上级审批通过后 → 自动生成"综合评语"终稿<br>• HR复核阶段 → 可重新生成或手动编辑</div>'
     + '<div class="prd-note"><div class="prd-note-title">评语状态流转</div><div class="flow">待生成 → 已生成 → 已编辑 → 已确认 → 已归档</div>• 已确认后锁定，不可再编辑</div>'
     + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 仅传输指标名称、权重、评分、评价说明等非敏感字段<br>• 禁止传输员工姓名、工号、薪酬数据至外部大模型<br>• 大模型调用全过程记录审计日志</div>'
-    + '<div class="prd-note"><div class="prd-note-title">版本管理</div>• 每次编辑自动保存版本记录（操作人、时间、内容快照）<br>• 支持版本对比，可回退至任意历史版本<br>• HR可查看评语编辑历史记录</div>'
+    + '<div class="prd-note"><div class="prd-note-title">版本管理</div>• 每次编辑自动保存版本记录（操作人、时间、内容快照）<br>• 支持版本对比，可回退至任意历史版本<br>• HR可查看评语编辑历史记录</div>',
+
+    pay_structure: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.1）</div>薪资结构配置是薪酬管理的基础，支持按岗位序列、部门或职级定义不同薪资方案。每个薪资方案包含一组薪资项目及其计算规则，系统支持灵活新增和修改工资表中的工资项内容。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">薪资项目字段</div>• 项目编号（PAY-XXXX，唯一）<br>• 项目名称：基本工资、岗位津贴、餐补、绩效奖金等<br>• 项目类型：固定项/公式项/手工项/系统项<br>• 项目分类：收入项/扣款项/税前项/税后项<br>• 计算公式：支持引用其他薪资项目、考勤/绩效数据<br>• 是否计税、是否计社保基数<br>• 显示顺序、生效/停用月份、适用薪资组</div>'
+    + '<div class="prd-note"><div class="prd-note-title">公式引擎</div>• 四则运算 + 括号：(基本工资+岗位津贴)×0.1<br>• 条件判断：IF(出勤天数≥22, 全勤奖, 0)<br>• 数学函数：MAX、MIN、ROUND、CEIL、FLOOR<br>• 阶梯计算：TIER(应税收入, 阶梯表)<br>• 引用考勤/绩效模块字段<br>• 公式校验：语法检查、循环引用检测、试算功能、版本管理</div>'
+    + '<div class="prd-note"><div class="prd-note-title">薪资组管理</div>• 按岗位序列/部门/职级划分适用员工范围<br>• 从薪资项目库中选择该组包含的项目子集<br>• 配置算薪日（如每月25日）和发放日（如次月10日）<br>• 状态：启用/停用</div>'
+    + '<div class="prd-note"><div class="prd-note-title">操作规则</div>• 修改项目类型需二次确认<br>• 修改公式后提示"是否重新计算受影响月份"<br>• 已停用项目不可修改，需先启用<br>• 停用需指定停用月份，历史数据保留<br>• 全部操作记录审计日志</div>',
+
+    pay_entry: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.2）</div>薪资录入菜单提供HR薪酬专员进行月度薪资数据录入的统一入口，支持手工录入、批量导入和系统自动归集三种方式。每月算薪前需完成所有薪资项目的数据录入与确认。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">月度初始化</div>• 触发：每月算薪周期开始或HR手动触发<br>• 根据薪资组配置为每位在岗员工生成本月薪资数据行<br>• 自动读取上月薪资作为基准，固定项自动继承<br>• 人员范围：当月1日在岗+新入职-离职（离职日≤15不参与）<br>• 初始化后状态：手工项"待录入"，系统项"待归集"</div>'
+    + '<div class="prd-note"><div class="prd-note-title">录入规则</div>• 固定项：初始化继承上月值，HR可修改<br>• 公式项：不可直接编辑，算薪时自动计算（灰色只读）<br>• 手工项：HR逐月录入，支持批量填充<br>• 系统项：从考勤/绩效自动读取，不可手工修改<br>• 数据校验：金额不能为负、不能超上限，异常标红<br>• 支持逐行保存和批量保存，离开页面提示未保存</div>'
+    + '<div class="prd-note"><div class="prd-note-title">批量导入</div>• 下载标准Excel模板（按薪资组生成对应列）<br>• 自动校验：工号有效性、金额格式、必填项完整性<br>• 校验失败行标红显示错误原因，支持修正后重新导入<br>• 导入操作记录审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">界面功能</div>• 月份选择器、薪资组/部门/序列筛选、员工搜索<br>• 工资表：员工为行、薪资项目为列，行内编辑<br>• 支持新增工资项、修改列属性、拖拽调整列顺序<br>• 隐藏/显示列、冻结关键列<br>• 汇总统计栏：实时显示应发合计、实发合计、人数</div>',
+
+    pay_adjust: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.3）</div>调薪管理记录和管理员工薪资标准变更全过程，包括调薪申请、审批、生效、历史查询。支持晋升调薪、年度普调、转正调薪、特殊调薪、降薪等多种场景。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">调薪类型与审批层级</div>• 晋升调薪：部门负责人→HR总监→分管领导，晋升生效日所在月<br>• 年度普调：HR主管→HR总监→总经理，次年1月<br>• 转正调薪：部门负责人→HR主管，转正日所在月<br>• 特殊调薪：HR总监→总经理，审批通过后指定月<br>• 降薪调薪：部门负责人→HR总监→分管领导，审批通过后指定月</div>'
+    + '<div class="prd-note"><div class="prd-note-title">调薪记录字段</div>• 调薪单号（ADJ-YYYYMM-XXXX）<br>• 员工工号/姓名、部门/序列、当前职级<br>• 调薪类型、调薪原因（必填）<br>• 调薪项目明细：项目名|调整前金额|调整后金额|调整幅度%<br>• 生效月份、附件、申请人、申请日期<br>• 审批状态：待审批/审批中/已通过/已驳回/已撤回<br>• 生效状态：未生效/已生效/已取消</div>'
+    + '<div class="prd-note"><div class="prd-note-title">操作方式</div>• 单条录入：表单逐项填写<br>• 批量录入：Excel模板导入（年度普调场景）<br>• 自动生成：人事模块晋升/转正时自动生成调薪草稿<br>• 调整幅度自动计算、支持同时调整多个薪资项目<br>• 审批通过后系统在生效月份自动更新薪资标准</div>'
+    + '<div class="prd-note"><div class="prd-note-title">统计报表</div>• 按部门/序列统计调薪人数、调薪总额、平均调薪幅度<br>• 审批人可查看员工历史薪资、同岗位薪资对比<br>• 导出触发审计日志告警</div>',
+
+    pay_other: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.4）</div>管理非固定薪资项目的临时性数据录入，包括奖金、扣款、补贴、补偿等各类一次性或偶发性薪资项目。与薪资录入菜单配合使用，为月度算薪提供完整数据。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">奖金录入</div>• 编号（BNS-YYYYMM-XXXX）<br>• 类型：年终奖/项目奖金/销售提成/满勤奖/优秀员工奖/其他<br>• 员工范围：支持按部门/序列批量选择<br>• 计税方式：并入当月工资计税/单独计税（年终奖优惠）<br>• 支持逐人填写或批量统一设置金额</div>'
+    + '<div class="prd-note"><div class="prd-note-title">扣款录入</div>• 编号（DED-YYYYMM-XXXX）<br>• 类型：违纪罚款/赔偿扣款/预借款扣回/代扣代缴/其他<br>• 是否税前扣除、是否分期扣款<br>• 分期扣款需设置分期月数和每期金额<br>• 扣款原因必填</div>'
+    + '<div class="prd-note"><div class="prd-note-title">补贴录入</div>• 编号（SUB-YYYYMM-XXXX）<br>• 类型：通讯/住房/高温/餐补/交通/外派/其他<br>• 发放周期：一次性/按月发放（需设起止月份）<br>• 是否计税（按税法规定部分补贴可免税）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">补偿金录入</div>• 编号（CMP-YYYYMM-XXXX）<br>• 类型：经济补偿金/代通知金/竞业限制补偿/工伤补偿/其他<br>• 计算依据说明、计税方式（免税/计税）<br>• 附件：补偿协议等法律文件</div>'
+    + '<div class="prd-note"><div class="prd-note-title">通用要求</div>• 均支持Excel模板批量导入<br>• 单笔超10000元需额外审批<br>• 已参与算薪的项目不可直接修改，须走"手动调整"流程<br>• 全部操作记录审计日志</div>',
+
+    pay_insurance: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.5）</div>社保公积金管理负责项目配置、基数申报与调整、缴纳明细管理。系统按各地政策比例自动计算个人与公司缴纳金额，个人扣款部分传入工资表参与算薪。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">项目配置字段</div>• 项目名称：养老/医疗/失业/工伤/生育保险、住房公积金<br>• 项目类型：社保/公积金<br>• 个人缴纳比例(%)、公司缴纳比例(%)<br>• 缴纳基数下限/上限<br>• 适用地区（北京、上海、深圳等多地区配置）<br>• 生效/停用月份</div>'
+    + '<div class="prd-note"><div class="prd-note-title">基数申报</div>• 每年基数核定窗口期，系统自动生成申报清单<br>• 逐人录入或批量导入新基数<br>• 系统自动校验基数是否在上下限范围内<br>• 需HR主管审核确认后生效<br>• 生效后自动按新基数计算每月缴纳金额<br>• 支持年中基数调整（须走调薪审批流程）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">缴纳明细</div>• 每月算薪时系统根据基数和比例自动生成<br>• 五险+公积金逐项自动计算（基数×比例）<br>• 个人缴纳合计传入工资表作为扣款项<br>• 公司缴纳合计用于成本核算<br>• 支持手动调整（补缴/退缴，需填原因并记录日志）<br>• 按月/季/年汇总，支持按部门/序列分类统计</div>'
+    + '<div class="prd-note"><div class="prd-note-title">多地区支持</div>• 为不同缴纳地员工配置不同方案<br>• 年度基数上下限调整时支持批量更新<br>• 可扩展新增缴纳地</div>',
+
+    pay_calc: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.6）</div>薪酬管理核心环节，系统自动归集考勤、绩效、社保等多源数据，按公式引擎执行一键算薪，生成完整月度工资表。支持手动调整与三级审核确认。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">前置检查（7项）</div>• 考勤数据完整性（阻断）<br>• 绩效数据完整性（阻断）<br>• 薪资录入完成度（阻断）<br>• 社保基数有效性（阻断）<br>• 调薪生效检查（阻断）<br>• 人员变动同步（告警）<br>• 公式有效性：无循环引用、无失效引用（阻断）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">一键算薪7步</div>① 数据归集：读取考勤扣款/加班费、绩效系数、社保扣款<br>② 固定项加载：含调薪后新标准<br>③ 公式计算：按依赖排序执行<br>④ 扣款汇总：社保+公积金+其他扣款<br>⑤ 个税计算：累计预扣法<br>⑥ 实发计算：应发-扣款-个税<br>⑦ 生成工资表，状态"核算中"</div>'
+    + '<div class="prd-note"><div class="prd-note-title">手动调整</div>• 选择员工→选择项目→输入调整后金额→填写原因（必填）<br>• 系统自动重算关联项目（如调整应发则个税重算）<br>• 系统项（考勤/绩效）不可直接调整，须退回源头模块<br>• 支持批量调整（如全员统一增发节日补贴）<br>• 全部操作记录审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">三级审核</div>• 初审（HR薪酬专员）：检查异常数据、核实手动调整<br>• 复审（HR主管）：审核汇总合理性、对比历史数据<br>• 终审（HR总监）：审批薪资总额、确认发放<br>• 异常标记：实发为负/大幅波动的行标红高亮<br>• 与上月对比显示变动金额和比例</div>',
+
+    pay_dispatch: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.7）</div>算薪确认后执行发放，包括发放清单生成、银行代发文件制作、工资条推送、发放状态跟踪。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">发放清单</div>• 字段：发放月份、工号、姓名、部门、序列、银行账号（脱敏）、开户行、实发金额<br>• 状态：待发放/已发放/发放失败<br>• 生成后提交财务复核，确认后进入代发文件生成<br>• 支持按部门/序列汇总查看<br>• 导出发放清单触发审计日志告警</div>'
+    + '<div class="prd-note"><div class="prd-note-title">银行代发文件</div>• 配置项：银行名称、文件格式（CSV/TXT/固定长度）、编码（UTF-8/GBK）<br>• 分隔符、字段映射、字段顺序、文件头/尾、金额格式（元/分）<br>• 生成后支持预览（脱敏）<br>• 自动加密存储，仅授权人员可下载<br>• 支持按银行分拆生成多个代发文件</div>'
+    + '<div class="prd-note"><div class="prd-note-title">工资条推送</div>• 内容：收入明细、扣款明细、应发/扣款合计、实发金额、累计个税<br>• 推送方式：企微消息/加密PDF邮件/系统消息<br>• 发放日当天推送<br>• 密码保护：独立密码（非登录密码），初始为工号后6位，首次查看强制修改<br>• 仅本人可查看，查看记录审计日志</div>'
+    + '<div class="prd-note"><div class="prd-note-title">发放状态流转</div><div class="flow">核算中 → 已确认 → 已发放/发放失败</div>• 发放失败：修正账号→重新生成代发文件→重新发放</div>',
+
+    pay_tax: '<div class="prd-note"><div class="prd-note-title">模块定位（4.8.8）</div>按《个人所得税法》采用累计预扣法计算每月预扣个人所得税，支持专项附加扣除管理和个税申报数据生成。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">累计预扣法公式</div>本月应预扣预缴税额 =（累计应纳税所得额×预扣率-速算扣除数）- 累计减免 - 累计已预扣<br>累计应纳税所得额 = 累计收入-免税收入-减除费用(5000×月数)-专项扣除-专项附加扣除-其他扣除</div>'
+    + '<div class="prd-note"><div class="prd-note-title">七级预扣率表</div>• 1级：≤36,000元，3%，速算扣除0<br>• 2级：36,000-144,000元，10%，速算扣除2,520<br>• 3级：144,000-300,000元，20%，速算扣除16,920<br>• 4级：300,000-420,000元，25%，速算扣除33,920<br>• 5级：420,000-660,000元，30%，速算扣除52,920<br>• 6级：660,000-960,000元，35%，速算扣除85,920<br>• 7级：&gt;960,000元，45%，速算扣除181,920</div>'
+    + '<div class="prd-note"><div class="prd-note-title">专项附加扣除（7项）</div>• 子女教育：每个子女2,000元/月<br>• 继续教育：400元/月（学历）或3,600元/年（职业资格）<br>• 住房贷款利息：1,000元/月，限首套，最长240个月<br>• 住房租金：800-1,500元/月（按城市），与房贷二选一<br>• 赡养老人：3,000元/月（独生全额，非独生分摊）<br>• 3岁以下婴幼儿照护：每个婴幼儿2,000元/月<br>• 扣除信息变更自动重算当月及后续月份个税</div>'
+    + '<div class="prd-note"><div class="prd-note-title">个税申报</div>• 每月算薪完成后自动生成申报数据<br>• 包含：身份信息、累计收入、累计扣除、当月预扣税额<br>• 支持导出税务系统申报格式文件<br>• 年度终了支持生成汇算清缴数据<br>• 导出触发审计日志告警</div>',
+
+    pay_cross: '<div class="prd-note"><div class="prd-note-title">跨模块联动（4.8.9）</div>薪酬模块与考勤（4.7）、绩效（4.9）、人事档案（4.2）、组织架构（4.1）及外部财务系统深度联动。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">考勤→薪酬</div>• 出勤天数→出勤工资/日薪计算<br>• 迟到/早退→按规则扣款（30分钟内50元，超30分钟100元）<br>• 旷工→日薪×天数×2<br>• 加班费：工作日1.5倍、休息日2.0倍、法定节假日3.0倍<br>• 请假：事假无薪、病假按比例扣薪<br>• 全勤标志→全勤奖<br>• 考勤月度确认后自动推送，同步失败自动重试3次</div>'
+    + '<div class="prd-note"><div class="prd-note-title">绩效→薪酬</div>• 绩效系数×绩效基数→绩效奖金（系数0.5~1.5）<br>• 考核等级对应比例：S(1.3)/A(1.1)/B(1.0)/C(0.8)/D(0.5)<br>• KPI达成率×KPI奖金基数→KPI奖金<br>• 缺失绩效数据的员工标红，可暂缓算薪或按默认系数1.0计算</div>'
+    + '<div class="prd-note"><div class="prd-note-title">月度时序</div>• 每月1-20日：收集考勤数据<br>• 21日：考勤数据确认<br>• 22日：推送考勤数据→薪酬模块<br>• 23日：发布月度绩效结果<br>• 24日：推送绩效数据→薪酬模块<br>• 25日：执行一键算薪<br>• 26-28日：薪资审核（初审→复审→终审）<br>• 29日：生成发放清单与银行代发文件<br>• 次月10日：工资发放日，推送工资条</div>'
+    + '<div class="prd-note"><div class="prd-note-title">安全管控</div>• 薪酬数据属企业最高级敏感数据<br>• AES-256加密存储、TLS 1.2+传输<br>• 单次导出超50人强制拦截并告警<br>• 禁止上传至外部AI工具，系统层面检测拦截<br>• 全部薪酬操作记录审计日志，保留≥5年</div>'
   };
   c.innerHTML = prdData[currentModule] || '';
 }
