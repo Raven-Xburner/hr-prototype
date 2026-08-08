@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HR人事管理系统 - 原型</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f1f5f9; }
@@ -477,6 +478,9 @@ var NAV_GROUPS = [
     { key:'pay_calc', name:'工资计算核算', icon:'🧮' },
     { key:'pay_dispatch', name:'工资发放', icon:'💳' },
     { key:'pay_tax', name:'个税管理', icon:'📋' }
+  ]},
+  { name:'管理看板', icon:'📊', collapsed:false, modules:[
+    { key:'dashboard', name:'管理看板', icon:'📈' }
   ]}
 ];
 var currentModule = 'onboard';
@@ -633,6 +637,7 @@ function renderPage() {
     case 'pay_calc': c.innerHTML = renderPayCalc(); break;
     case 'pay_dispatch': c.innerHTML = renderPayDispatch(); break;
     case 'pay_tax': c.innerHTML = renderPayTax(); break;
+    case 'dashboard': c.innerHTML = renderDashboard(); break;
   }
 }
 
@@ -2486,6 +2491,319 @@ function renderPayTax() {
   + '<div style="background:#fff;border-radius:8px;padding:16px"><div class="form-section-title">本月个税汇总（2026年7月）</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">纳税人数</div><div style="font-size:18px;font-weight:700">1,620</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">本月个税总额</div><div style="font-size:18px;font-weight:700;color:#dc2626">56,200</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">累计个税总额</div><div style="font-size:18px;font-weight:700">392,800</div></div><div style="background:#f8fafc;padding:12px;border-radius:6px;text-align:center"><div style="font-size:12px;color:#9ca3af">免税人数</div><div style="font-size:18px;font-weight:700">35</div></div></div><button class="btn-primary" onclick="payTaxTab=\'declare\';renderPage()">查看申报明细</button></div>';
 }
 
+// ============ 管理看板 ============
+var dashboardTab = 'trend';
+var dashEmployees = [
+  {id:'EMP001',name:'肖建光',dept:'售前技术部',seq:'售前序列',edu:4,diligence:3.2,aiExam:85,kpi:92,mgmtSpan:65,cost:35,perfGrade:'A'},
+  {id:'EMP002',name:'李明辉',dept:'销售部',seq:'销售序列',edu:3,diligence:2.8,aiExam:72,kpi:88,mgmtSpan:45,cost:42,perfGrade:'A'},
+  {id:'EMP003',name:'王芳',dept:'人力资源部',seq:'职能序列',edu:4,diligence:3.5,aiExam:90,kpi:95,mgmtSpan:30,cost:28,perfGrade:'S'},
+  {id:'EMP004',name:'张伟',dept:'研发部',seq:'技术序列',edu:5,diligence:3.8,aiExam:95,kpi:98,mgmtSpan:15,cost:55,perfGrade:'S'},
+  {id:'EMP005',name:'刘洋',dept:'财务部',seq:'职能序列',edu:3,diligence:2.5,aiExam:68,kpi:75,mgmtSpan:20,cost:30,perfGrade:'B'},
+  {id:'EMP006',name:'陈静',dept:'市场部',seq:'市场序列',edu:4,diligence:3.0,aiExam:78,kpi:82,mgmtSpan:35,cost:38,perfGrade:'A'},
+  {id:'EMP007',name:'赵强',dept:'研发部',seq:'技术序列',edu:4,diligence:3.6,aiExam:88,kpi:90,mgmtSpan:12,cost:48,perfGrade:'A'},
+  {id:'EMP008',name:'孙丽',dept:'客服部',seq:'客服序列',edu:2,diligence:2.9,aiExam:65,kpi:78,mgmtSpan:25,cost:25,perfGrade:'B'},
+  {id:'EMP009',name:'周杰',dept:'销售部',seq:'销售序列',edu:3,diligence:3.1,aiExam:75,kpi:85,mgmtSpan:40,cost:45,perfGrade:'A'},
+  {id:'EMP010',name:'吴敏',dept:'行政部',seq:'职能序列',edu:2,diligence:2.7,aiExam:60,kpi:70,mgmtSpan:18,cost:22,perfGrade:'B'},
+  {id:'EMP011',name:'郑浩',dept:'研发部',seq:'技术序列',edu:5,diligence:3.9,aiExam:92,kpi:96,mgmtSpan:10,cost:58,perfGrade:'S'},
+  {id:'EMP012',name:'黄蕾',dept:'人力资源部',seq:'职能序列',edu:3,diligence:3.3,aiExam:80,kpi:85,mgmtSpan:22,cost:26,perfGrade:'A'},
+  {id:'EMP013',name:'朱峰',dept:'售前技术部',seq:'售前序列',edu:4,diligence:3.4,aiExam:82,kpi:88,mgmtSpan:55,cost:40,perfGrade:'A'},
+  {id:'EMP014',name:'马丹',dept:'市场部',seq:'市场序列',edu:3,diligence:2.6,aiExam:70,kpi:76,mgmtSpan:28,cost:32,perfGrade:'B'},
+  {id:'EMP015',name:'胡斌',dept:'研发部',seq:'技术序列',edu:4,diligence:3.7,aiExam:90,kpi:92,mgmtSpan:8,cost:52,perfGrade:'S'},
+  {id:'EMP016',name:'林婷',dept:'财务部',seq:'职能序列',edu:4,diligence:3.0,aiExam:76,kpi:80,mgmtSpan:15,cost:35,perfGrade:'B'},
+  {id:'EMP017',name:'徐磊',dept:'销售部',seq:'销售序列',edu:2,diligence:2.4,aiExam:58,kpi:68,mgmtSpan:38,cost:40,perfGrade:'C'},
+  {id:'EMP018',name:'何雪',dept:'客服部',seq:'客服序列',edu:3,diligence:3.2,aiExam:72,kpi:82,mgmtSpan:20,cost:24,perfGrade:'A'},
+  {id:'EMP019',name:'罗鹏',dept:'研发部',seq:'技术序列',edu:5,diligence:4.0,aiExam:96,kpi:94,mgmtSpan:12,cost:60,perfGrade:'S'},
+  {id:'EMP020',name:'谢芳',dept:'行政部',seq:'职能序列',edu:2,diligence:2.8,aiExam:62,kpi:72,mgmtSpan:16,cost:20,perfGrade:'B'},
+  {id:'EMP021',name:'韩超',dept:'售前技术部',seq:'售前序列',edu:3,diligence:3.5,aiExam:85,kpi:90,mgmtSpan:48,cost:38,perfGrade:'A'},
+  {id:'EMP022',name:'唐颖',dept:'市场部',seq:'市场序列',edu:4,diligence:3.1,aiExam:78,kpi:84,mgmtSpan:32,cost:36,perfGrade:'A'},
+  {id:'EMP023',name:'冯刚',dept:'研发部',seq:'技术序列',edu:4,diligence:3.8,aiExam:91,kpi:93,mgmtSpan:10,cost:50,perfGrade:'S'},
+  {id:'EMP024',name:'董倩',dept:'人力资源部',seq:'职能序列',edu:3,diligence:2.9,aiExam:74,kpi:78,mgmtSpan:25,cost:28,perfGrade:'B'},
+  {id:'EMP025',name:'程亮',dept:'销售部',seq:'销售序列',edu:3,diligence:3.3,aiExam:80,kpi:86,mgmtSpan:42,cost:44,perfGrade:'A'},
+  {id:'EMP026',name:'曹琳',dept:'客服部',seq:'客服序列',edu:2,diligence:2.6,aiExam:64,kpi:74,mgmtSpan:22,cost:23,perfGrade:'B'},
+  {id:'EMP027',name:'袁野',dept:'研发部',seq:'技术序列',edu:5,diligence:3.9,aiExam:94,kpi:97,mgmtSpan:14,cost:56,perfGrade:'S'},
+  {id:'EMP028',name:'邓薇',dept:'财务部',seq:'职能序列',edu:4,diligence:3.2,aiExam:79,kpi:83,mgmtSpan:18,cost:33,perfGrade:'A'},
+  {id:'EMP029',name:'许博',dept:'售前技术部',seq:'售前序列',edu:4,diligence:3.6,aiExam:87,kpi:91,mgmtSpan:52,cost:42,perfGrade:'A'},
+  {id:'EMP030',name:'傅瑶',dept:'市场部',seq:'市场序列',edu:3,diligence:2.7,aiExam:71,kpi:77,mgmtSpan:30,cost:34,perfGrade:'B'},
+  {id:'EMP031',name:'沈骏',dept:'研发部',seq:'技术序列',edu:4,diligence:3.7,aiExam:89,kpi:91,mgmtSpan:11,cost:54,perfGrade:'S'},
+  {id:'EMP032',name:'曾萍',dept:'行政部',seq:'职能序列',edu:2,diligence:2.5,aiExam:59,kpi:69,mgmtSpan:14,cost:21,perfGrade:'C'},
+  {id:'EMP033',name:'彭威',dept:'销售部',seq:'销售序列',edu:3,diligence:3.0,aiExam:76,kpi:83,mgmtSpan:36,cost:41,perfGrade:'A'},
+  {id:'EMP034',name:'吕婧',dept:'人力资源部',seq:'职能序列',edu:4,diligence:3.4,aiExam:83,kpi:87,mgmtSpan:20,cost:27,perfGrade:'A'},
+  {id:'EMP035',name:'苏翔',dept:'客服部',seq:'客服序列',edu:3,diligence:3.1,aiExam:73,kpi:80,mgmtSpan:24,cost:26,perfGrade:'B'},
+  {id:'EMP036',name:'蒋涛',dept:'研发部',seq:'技术序列',edu:5,diligence:4.1,aiExam:97,kpi:99,mgmtSpan:16,cost:62,perfGrade:'S'},
+  {id:'EMP037',name:'蔡雯',dept:'财务部',seq:'职能序列',edu:3,diligence:2.8,aiExam:70,kpi:76,mgmtSpan:16,cost:31,perfGrade:'B'},
+  {id:'EMP038',name:'贾辉',dept:'售前技术部',seq:'售前序列',edu:3,diligence:3.3,aiExam:81,kpi:86,mgmtSpan:50,cost:39,perfGrade:'A'},
+  {id:'EMP039',name:'丁悦',dept:'市场部',seq:'市场序列',edu:4,diligence:3.2,aiExam:79,kpi:85,mgmtSpan:34,cost:37,perfGrade:'A'},
+  {id:'EMP040',name:'魏强',dept:'研发部',seq:'技术序列',edu:4,diligence:3.6,aiExam:88,kpi:90,mgmtSpan:9,cost:49,perfGrade:'A'},
+  {id:'EMP041',name:'薛萍',dept:'行政部',seq:'职能序列',edu:2,diligence:2.6,aiExam:61,kpi:71,mgmtSpan:15,cost:19,perfGrade:'B'},
+  {id:'EMP042',name:'叶锋',dept:'销售部',seq:'销售序列',edu:3,diligence:3.4,aiExam:82,kpi:87,mgmtSpan:44,cost:46,perfGrade:'A'},
+  {id:'EMP043',name:'阎蕾',dept:'人力资源部',seq:'职能序列',edu:3,diligence:3.0,aiExam:75,kpi:79,mgmtSpan:23,cost:29,perfGrade:'B'},
+  {id:'EMP044',name:'余磊',dept:'客服部',seq:'客服序列',edu:2,diligence:2.7,aiExam:66,kpi:75,mgmtSpan:21,cost:24,perfGrade:'B'},
+  {id:'EMP045',name:'潘洁',dept:'研发部',seq:'技术序列',edu:5,diligence:3.8,aiExam:93,kpi:95,mgmtSpan:13,cost:57,perfGrade:'S'},
+  {id:'EMP046',name:'杜超',dept:'财务部',seq:'职能序列',edu:4,diligence:3.3,aiExam:81,kpi:84,mgmtSpan:17,cost:34,perfGrade:'A'},
+  {id:'EMP047',name:'戴琳',dept:'售前技术部',seq:'售前序列',edu:4,diligence:3.5,aiExam:84,kpi:89,mgmtSpan:58,cost:41,perfGrade:'A'},
+  {id:'EMP048',name:'夏阳',dept:'市场部',seq:'市场序列',edu:3,diligence:2.9,aiExam:74,kpi:79,mgmtSpan:31,cost:35,perfGrade:'B'},
+  {id:'EMP049',name:'钟华',dept:'研发部',seq:'技术序列',edu:4,diligence:3.9,aiExam:92,kpi:94,mgmtSpan:11,cost:53,perfGrade:'S'},
+  {id:'EMP050',name:'汪敏',dept:'行政部',seq:'职能序列',edu:2,diligence:2.4,aiExam:57,kpi:67,mgmtSpan:13,cost:18,perfGrade:'C'},
+  {id:'EMP051',name:'田勇',dept:'销售部',seq:'销售序列',edu:2,diligence:2.3,aiExam:55,kpi:65,mgmtSpan:35,cost:38,perfGrade:'C'},
+  {id:'EMP052',name:'任芳',dept:'人力资源部',seq:'职能序列',edu:4,diligence:3.6,aiExam:86,kpi:90,mgmtSpan:26,cost:30,perfGrade:'A'},
+  {id:'EMP053',name:'姜涛',dept:'客服部',seq:'客服序列',edu:3,diligence:3.0,aiExam:71,kpi:78,mgmtSpan:23,cost:25,perfGrade:'B'},
+  {id:'EMP054',name:'范伟',dept:'研发部',seq:'技术序列',edu:4,diligence:3.7,aiExam:90,kpi:92,mgmtSpan:10,cost:51,perfGrade:'S'},
+  {id:'EMP055',name:'方婷',dept:'财务部',seq:'职能序列',edu:3,diligence:2.9,aiExam:73,kpi:77,mgmtSpan:19,cost:32,perfGrade:'B'},
+  {id:'EMP056',name:'邹鑫',dept:'售前技术部',seq:'售前序列',edu:3,diligence:3.2,aiExam:79,kpi:84,mgmtSpan:46,cost:37,perfGrade:'A'},
+  {id:'EMP057',name:'熊玲',dept:'市场部',seq:'市场序列',edu:4,diligence:3.3,aiExam:80,kpi:86,mgmtSpan:33,cost:36,perfGrade:'A'},
+  {id:'EMP058',name:'金鹏',dept:'研发部',seq:'技术序列',edu:5,diligence:4.0,aiExam:95,kpi:96,mgmtSpan:15,cost:59,perfGrade:'S'},
+  {id:'EMP059',name:'陆倩',dept:'行政部',seq:'职能序列',edu:2,diligence:2.5,aiExam:60,kpi:70,mgmtSpan:12,cost:20,perfGrade:'B'},
+  {id:'EMP060',name:'侯杰',dept:'销售部',seq:'销售序列',edu:3,diligence:3.1,aiExam:77,kpi:84,mgmtSpan:41,cost:43,perfGrade:'A'}
+];
+
+function getTrafficColor(dim, val) {
+  // 5-level: 5分=黑灯, 4分=绿灯, 3分=蓝灯, 2分=黄灯, 1分=红灯
+  if(dim==='edu') { if(val>=5) return '#1a1a1a'; if(val>=4) return '#16a34a'; if(val>=3) return '#2563eb'; if(val>=2) return '#eab308'; return '#dc2626'; }
+  if(dim==='diligence') { if(val>=3.6) return '#1a1a1a'; if(val>=3.0) return '#16a34a'; if(val>=2.4) return '#2563eb'; if(val>=1.8) return '#eab308'; return '#dc2626'; }
+  if(dim==='aiExam') { if(val>=80) return '#1a1a1a'; if(val>=60) return '#16a34a'; if(val>=40) return '#2563eb'; if(val>=20) return '#eab308'; return '#dc2626'; }
+  if(dim==='kpi') { if(val>=95) return '#1a1a1a'; if(val>=85) return '#16a34a'; if(val>=75) return '#2563eb'; if(val>=60) return '#eab308'; return '#dc2626'; }
+  if(dim==='mgmtSpan') { if(val>=70) return '#1a1a1a'; if(val>=50) return '#16a34a'; if(val>=30) return '#2563eb'; if(val>=10) return '#eab308'; return '#dc2626'; }
+  if(dim==='cost') { if(val<=20) return '#1a1a1a'; if(val<=40) return '#16a34a'; if(val<=60) return '#2563eb'; if(val<=80) return '#eab308'; return '#dc2626'; }
+  if(dim==='growth') { if(val>=80) return '#1a1a1a'; if(val>=60) return '#16a34a'; if(val>=40) return '#2563eb'; if(val>=20) return '#eab308'; return '#dc2626'; }
+  if(dim==='projectTag') { if(val>=3) return '#1a1a1a'; if(val>=2.5) return '#16a34a'; if(val>=2) return '#2563eb'; if(val>=1.5) return '#eab308'; return '#dc2626'; }
+  if(dim==='keyInfo') { if(val>=80) return '#1a1a1a'; if(val>=60) return '#16a34a'; if(val>=40) return '#2563eb'; if(val>=20) return '#eab308'; return '#dc2626'; }
+  if(dim==='aiAssess') { if(val>=3) return '#1a1a1a'; if(val>=2.5) return '#16a34a'; if(val>=2) return '#2563eb'; if(val>=1.5) return '#eab308'; return '#dc2626'; }
+  return '#9ca3af';
+}
+// Derive 9-dimension fields from existing data for employees missing them
+function getEmpDim(e, dim) {
+  if(dim==='growth') return e.growth || ((e.kpi*0.4 + e.aiExam*0.3 + (100-e.cost)*0.3) * 0.8);
+  if(dim==='projectTag') return e.projectTag || (e.kpi>=90?3:e.kpi>=75?2:1);
+  if(dim==='keyInfo') return e.keyInfo || (e.edu*15 + e.diligence*10);
+  if(dim==='aiAssess') return e.aiAssess || (e.aiExam>=85?3:e.aiExam>=65?2:1);
+  return e[dim];
+}
+
+function renderDashboard() {
+  var tabHtml = '<div class="tab-bar">'
+    + '<div class="tab-item '+(dashboardTab==='trend'?'active':'')+'" onclick="dashboardTab=\'trend\';renderPage()">入离职趋势</div>'
+    + '<div class="tab-item '+(dashboardTab==='edu'?'active':'')+'" onclick="dashboardTab=\'edu\';renderPage()">学历结构</div>'
+    + '<div class="tab-item '+(dashboardTab==='diligence'?'active':'')+'" onclick="dashboardTab=\'diligence\';renderPage()">勤奋度排名</div>'
+    + '<div class="tab-item '+(dashboardTab==='cost'?'active':'')+'" onclick="dashboardTab=\'cost\';renderPage()">人力成本</div>'
+    + '<div class="tab-item '+(dashboardTab==='perf'?'active':'')+'" onclick="dashboardTab=\'perf\';renderPage()">绩效分布</div>'
+    + '<div class="tab-item '+(dashboardTab==='hex'?'active':'')+'" onclick="dashboardTab=\'hex\';renderPage()">六边形</div>'
+    + '<div class="tab-item '+(dashboardTab==='custom'?'active':'')+'" onclick="dashboardTab=\'custom\';renderPage()">自定义看板</div>'
+    + '</div>';
+  
+  var filterHtml = '<div class="filter-bar" style="margin-bottom:16px">'
+    + '<div class="filter-item"><label>时间范围</label><select><option>本月</option><option>上月</option><option>本季</option><option selected>本年</option></select></div>'
+    + '<div class="filter-item"><label>部门</label><select><option value="">全部部门</option><option>售前技术部</option><option>销售部</option><option>研发部</option><option>市场部</option><option>人力资源部</option><option>财务部</option><option>客服部</option><option>行政部</option></select></div>'
+    + '<div class="filter-item"><label>岗位序列</label><select><option value="">全部序列</option><option>售前序列</option><option>销售序列</option><option>技术序列</option><option>市场序列</option><option>职能序列</option><option>客服序列</option></select></div>'
+    + '<div style="display:flex;gap:8px;align-items:flex-end;margin-left:auto">'
+    + '<button class="btn-secondary" onclick="showToast(\'数据已刷新\')" style="padding:6px 12px">🔄 刷新</button>'
+    + '<button class="btn-secondary" onclick="if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen()" style="padding:6px 12px">⛶ 全屏</button>'
+    + '</div></div>';
+  
+  var content = '';
+  if(dashboardTab==='trend') content = renderDashTrend();
+  else if(dashboardTab==='edu') content = renderDashEdu();
+  else if(dashboardTab==='diligence') content = renderDashDiligence();
+  else if(dashboardTab==='cost') content = renderDashCost();
+  else if(dashboardTab==='perf') content = renderDashPerf();
+  else if(dashboardTab==='hex') content = renderDashHex();
+  else if(dashboardTab==='custom') content = renderDashCustom();
+  
+  return tabHtml + filterHtml + content;
+}
+
+function renderDashTrend() {
+  var months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  var hireData = [12,8,15,10,18,14,20,16,22,19,25,21];
+  var leaveData = [5,7,4,6,8,5,9,7,10,8,12,9];
+  return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">本年入职</div><div style="font-size:24px;font-weight:700;color:#16a34a">200</div><div style="font-size:11px;color:#6b7280">同比 +15%</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">本年离职</div><div style="font-size:24px;font-weight:700;color:#dc2626">90</div><div style="font-size:11px;color:#6b7280">同比 -8%</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">净增人数</div><div style="font-size:24px;font-weight:700;color:#2563eb">110</div><div style="font-size:11px;color:#6b7280">环比 +22%</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">离职率</div><div style="font-size:24px;font-weight:700;color:#ea580c">5.2%</div><div style="font-size:11px;color:#6b7280">行业平均 8%</div></div>'
+    + '</div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:600">入离职趋势（2026年）</h3><div><button class="btn-secondary btn-sm" onclick="showToast(\'导出PNG\')" style="margin-right:6px">导出PNG</button><button class="btn-secondary btn-sm" onclick="showToast(\'AI解析：入职高峰在7月和10月，建议提前规划招聘资源\')">🤖 AI解析</button></div></div><canvas id="trendChart" height="80"></canvas></div>'
+    + '<script>setTimeout(function(){var ctx=document.getElementById("trendChart");if(ctx){new Chart(ctx,{type:"bar",data:{labels:'+JSON.stringify(months)+',datasets:[{label:"入职人数",data:'+JSON.stringify(hireData)+',backgroundColor:"rgba(34,197,94,0.7)",yAxisID:"y"},{label:"离职人数",type:"line",data:'+JSON.stringify(leaveData)+',borderColor:"#dc2626",backgroundColor:"rgba(220,38,38,0.1)",yAxisID:"y1",tension:0.3}]},options:{responsive:true,scales:{y:{type:"linear",position:"left",title:{display:true,text:"入职人数"}},y1:{type:"linear",position:"right",title:{display:true,text:"离职人数"},grid:{drawOnChartArea:false}}}}}})},100)</script>';
+}
+
+function renderDashEdu() {
+  var eduCounts = {博士:8,硕士:22,本科:45,大专:12,其他:3};
+  var labels = Object.keys(eduCounts);
+  var data = Object.values(eduCounts);
+  var colors = ['#16a34a','#2563eb','#eab308','#ea580c','#9ca3af'];
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:600">学历分布</h3><button class="btn-secondary btn-sm" onclick="showToast(\'AI解析：硕士及以上学历占比27%，高于行业平均\')">🤖 AI解析</button></div><canvas id="eduChart" height="160"></canvas></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">各学历统计</h3><table><thead><tr><th>学历</th><th style="text-align:right">人数</th><th style="text-align:right">占比</th><th style="text-align:right">平均绩效</th><th style="text-align:right">离职率</th></tr></thead><tbody>'
+    + '<tr><td>博士</td><td style="text-align:right">8</td><td style="text-align:right">8.9%</td><td style="text-align:right">92.5</td><td style="text-align:right">2.1%</td></tr>'
+    + '<tr><td>硕士</td><td style="text-align:right">22</td><td style="text-align:right">24.4%</td><td style="text-align:right">88.3</td><td style="text-align:right">3.5%</td></tr>'
+    + '<tr><td>本科</td><td style="text-align:right">45</td><td style="text-align:right">50.0%</td><td style="text-align:right">82.1</td><td style="text-align:right">5.8%</td></tr>'
+    + '<tr><td>大专</td><td style="text-align:right">12</td><td style="text-align:right">13.3%</td><td style="text-align:right">76.4</td><td style="text-align:right">8.2%</td></tr>'
+    + '<tr><td>其他</td><td style="text-align:right">3</td><td style="text-align:right">3.3%</td><td style="text-align:right">71.2</td><td style="text-align:right">12.5%</td></tr>'
+    + '</tbody></table></div></div>'
+    + '<script>setTimeout(function(){var ctx=document.getElementById("eduChart");if(ctx){new Chart(ctx,{type:"doughnut",data:{labels:'+JSON.stringify(labels)+',datasets:[{data:'+JSON.stringify(data)+',backgroundColor:'+JSON.stringify(colors)+'}]},options:{responsive:true,plugins:{legend:{position:"right"}}}})}},100)</script>';
+}
+
+function renderDashDiligence() {
+  var sorted = dashEmployees.slice().sort(function(a,b){return b.diligence-a.diligence;});
+  var top10 = sorted.slice(0,10);
+  var labels = top10.map(function(e){return e.name;});
+  var data = top10.map(function(e){return e.diligence;});
+  var colors = data.map(function(v){return v>=3.6?'#16a34a':v>=2.4?'#eab308':'#dc2626';});
+  var rows = sorted.map(function(e,i){
+    var color = e.diligence>=3.6?'#16a34a':e.diligence>=2.4?'#eab308':'#dc2626';
+    return '<tr><td>'+(i+1)+'</td><td>'+e.id+'</td><td>'+e.name+'</td><td>'+e.dept+'</td><td>'+e.seq+'</td><td style="text-align:right;font-weight:600;color:'+color+'">'+e.diligence.toFixed(1)+'</td><td style="text-align:right">'+e.kpi+'</td><td><span class="badge badge-'+(e.perfGrade==='S'?'green':e.perfGrade==='A'?'blue':e.perfGrade==='B'?'yellow':'red')+'">'+e.perfGrade+'</span></td></tr>';
+  }).join('');
+  return '<div style="background:#fff;border-radius:8px;padding:20px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:600">勤奋度排名 Top 10</h3><button class="btn-secondary btn-sm" onclick="showToast(\'AI解析：Top10员工平均绩效88分，建议关注高勤奋度高绩效人才\')">🤖 AI解析</button></div><canvas id="diligenceChart" height="60"></canvas></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">全员勤奋度排名</h3><div class="table-container" style="max-height:400px;overflow-y:auto"><table><thead><tr><th>排名</th><th>工号</th><th>姓名</th><th>部门</th><th>序列</th><th style="text-align:right">勤奋度</th><th style="text-align:right">KPI</th><th>绩效等级</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
+    + '<script>setTimeout(function(){var ctx=document.getElementById("diligenceChart");if(ctx){new Chart(ctx,{type:"bar",data:{labels:'+JSON.stringify(labels)+',datasets:[{label:"勤奋度",data:'+JSON.stringify(data)+',backgroundColor:'+JSON.stringify(colors)+'}]},options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:5}}}})}},100)</script>';
+}
+
+function renderDashCost() {
+  var depts = ['售前技术部','销售部','研发部','市场部','人力资源部','财务部','客服部','行政部'];
+  var costData = [285,320,450,180,95,110,85,75];
+  var yoyData = [12,8,15,-5,6,4,3,2];
+  return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">本年人力成本</div><div style="font-size:24px;font-weight:700;color:#2563eb">1,600万</div><div style="font-size:11px;color:#6b7280">同比 +9.5%</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">人均成本</div><div style="font-size:24px;font-weight:700">17.8万</div><div style="font-size:11px;color:#6b7280">同比 +5.2%</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">工资占比</div><div style="font-size:24px;font-weight:700">68%</div><div style="font-size:11px;color:#6b7280">社保22% 其他10%</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:16px;text-align:center"><div style="font-size:12px;color:#9ca3af">成本效率</div><div style="font-size:24px;font-weight:700;color:#16a34a">1.35</div><div style="font-size:11px;color:#6b7280">人均产出/人均成本</div></div>'
+    + '</div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:600">各部门人力成本（万元）</h3><button class="btn-secondary btn-sm" onclick="showToast(\'AI解析：研发部成本最高，建议优化人员结构\')">🤖 AI解析</button></div><canvas id="costChart" height="80"></canvas></div>'
+    + '<script>setTimeout(function(){var ctx=document.getElementById("costChart");if(ctx){new Chart(ctx,{type:"bar",data:{labels:'+JSON.stringify(depts)+',datasets:[{label:"人力成本(万)",data:'+JSON.stringify(costData)+',backgroundColor:"rgba(37,99,235,0.7)",yAxisID:"y"},{label:"同比增长(%)",type:"line",data:'+JSON.stringify(yoyData)+',borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)",yAxisID:"y1",tension:0.3}]},options:{responsive:true,scales:{y:{type:"linear",position:"left",title:{display:true,text:"成本(万元)"}},y1:{type:"linear",position:"right",title:{display:true,text:"同比增长(%)"},grid:{drawOnChartArea:false}}}}}})},100)</script>';
+}
+
+function renderDashPerf() {
+  var perfCounts = {S:12,A:28,B:35,C:10,D:5};
+  var labels = Object.keys(perfCounts);
+  var data = Object.values(perfCounts);
+  var colors = ['#16a34a','#2563eb','#eab308','#ea580c','#dc2626'];
+  var rows = dashEmployees.slice().sort(function(a,b){return b.kpi-a.kpi;}).slice(0,20).map(function(e,i){
+    return '<tr><td>'+(i+1)+'</td><td>'+e.id+'</td><td>'+e.name+'</td><td>'+e.dept+'</td><td style="text-align:right">'+e.kpi+'</td><td><span class="badge badge-'+(e.perfGrade==='S'?'green':e.perfGrade==='A'?'blue':e.perfGrade==='B'?'yellow':'red')+'">'+e.perfGrade+'</span></td><td style="text-align:right">'+e.diligence.toFixed(1)+'</td></tr>';
+  }).join('');
+  return '<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px">'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:600">绩效等级分布</h3><button class="btn-secondary btn-sm" onclick="showToast(\'AI解析：S级占比13.3%，略高于标准10%\')">🤖 AI解析</button></div><canvas id="perfChart" height="160"></canvas></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">等级明细</h3><table><thead><tr><th>等级</th><th style="text-align:right">人数</th><th style="text-align:right">占比</th><th style="text-align:right">标准占比</th><th>状态</th></tr></thead><tbody>'
+    + '<tr><td><span class="badge badge-green">S 卓越</span></td><td style="text-align:right">12</td><td style="text-align:right">13.3%</td><td style="text-align:right">≤10%</td><td><span style="color:#ea580c">⚠️ 超标</span></td></tr>'
+    + '<tr><td><span class="badge badge-blue">A 优秀</span></td><td style="text-align:right">28</td><td style="text-align:right">31.1%</td><td style="text-align:right">≤20%</td><td><span style="color:#ea580c">⚠️ 超标</span></td></tr>'
+    + '<tr><td><span class="badge badge-yellow">B 良好</span></td><td style="text-align:right">35</td><td style="text-align:right">38.9%</td><td style="text-align:right">≥40%</td><td><span style="color:#dc2626">⚠️ 不足</span></td></tr>'
+    + '<tr><td><span class="badge badge-red">C 待改进</span></td><td style="text-align:right">10</td><td style="text-align:right">11.1%</td><td style="text-align:right">≤20%</td><td><span style="color:#16a34a">✓ 正常</span></td></tr>'
+    + '<tr><td><span class="badge badge-red">D 不合格</span></td><td style="text-align:right">5</td><td style="text-align:right">5.6%</td><td style="text-align:right">≤10%</td><td><span style="color:#16a34a">✓ 正常</span></td></tr>'
+    + '</tbody></table></div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">KPI排名 Top 20</h3><div class="table-container" style="max-height:400px;overflow-y:auto"><table><thead><tr><th>排名</th><th>工号</th><th>姓名</th><th>部门</th><th style="text-align:right">KPI</th><th>等级</th><th style="text-align:right">勤奋度</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
+    + '<script>setTimeout(function(){var ctx=document.getElementById("perfChart");if(ctx){new Chart(ctx,{type:"doughnut",data:{labels:'+JSON.stringify(labels)+',datasets:[{data:'+JSON.stringify(data)+',backgroundColor:'+JSON.stringify(colors)+'}]},options:{responsive:true,plugins:{legend:{position:"right"}}}})}},100)</script>';
+}
+
+function renderDashHex() {
+  var empRows = dashEmployees.slice(0,30).map(function(e){
+    var eduColor = getTrafficColor('edu',e.edu);
+    var dilColor = getTrafficColor('diligence',e.diligence);
+    var aiColor = getTrafficColor('aiExam',e.aiExam);
+    var kpiColor = getTrafficColor('kpi',e.kpi);
+    var mgmtColor = getTrafficColor('mgmtSpan',e.mgmtSpan);
+    var costColor = getTrafficColor('cost',e.cost);
+    var growth = getEmpDim(e,'growth'), projTag = getEmpDim(e,'projectTag'), keyInfo = getEmpDim(e,'keyInfo'), aiAssess = getEmpDim(e,'aiAssess');
+    var growthColor = getTrafficColor('growth',growth);
+    var projColor = getTrafficColor('projectTag',projTag);
+    var keyInfoColor = getTrafficColor('keyInfo',keyInfo);
+    var aiAssessColor = getTrafficColor('aiAssess',aiAssess);
+    var score = ((e.edu*0.12+e.diligence*0.12+(e.kpi/33.33)*0.18+(growth/33.33)*0.10+(projTag/3*100/33.33)*0.08+(e.mgmtSpan/33.33)*0.06+(100-e.cost)/33.33*0.10+(keyInfo/33.33)*0.08+(aiAssess/3*100/33.33)*0.16)/3*100).toFixed(1);
+    return '<tr onclick="showHexDetail(\''+e.id+'\')" style="cursor:pointer"><td>'+e.id+'</td><td>'+e.name+'</td><td>'+e.dept+'</td><td>'+e.seq+'</td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+eduColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+dilColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+aiColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+kpiColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+mgmtColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+costColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+growthColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+projColor+'"></span></td>'
+      + '<td style="text-align:center"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+aiAssessColor+'"></span></td>'
+      + '<td style="text-align:right;font-weight:600">'+score+'</td>'
+      + '<td><span class="badge badge-'+(e.perfGrade==='S'?'green':e.perfGrade==='A'?'blue':e.perfGrade==='B'?'yellow':'red')+'">'+e.perfGrade+'</span></td></tr>';
+  }).join('');
+  
+  return '<div style="background:#fff;border-radius:8px;padding:20px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:600">六边形人才评估</h3><div><select id="hexEmpSelect" onchange="updateHexChart()" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px"><option value="">选择员工查看六边形</option>'+dashEmployees.slice(0,30).map(function(e){return '<option value="'+e.id+'">'+e.name+' ('+e.dept+')</option>';}).join('')+'</select><button class="btn-secondary btn-sm" style="margin-left:8px" onclick="showToast(\'AI解析：该员工综合得分82.5分，亮点：KPI优秀、勤奋度高；不足：管理幅度较小\')">🤖 AI解析</button></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px"><div><canvas id="hexChart" height="200"></canvas></div><div id="hexDetail" style="padding:20px"><h4 style="font-size:14px;font-weight:600;margin-bottom:12px">六边形红绿灯规则</h4><table style="font-size:12px"><thead><tr><th>维度</th><th>5分(黑)</th><th>4分(绿)</th><th>3分(蓝)</th><th>2分(黄)</th><th>1分(红)</th></tr></thead><tbody>'
+    + '<tr><td>学历</td><td>内部一学985</td><td>内部一学211</td><td>内部一学QS100</td><td>内部一学一本</td><td>其他</td></tr>'
+    + '<tr><td>勤奋度</td><td>>均值20%</td><td>10%-20%</td><td>0%-10%</td><td>-10%-0%</td><td>&lt;-10%</td></tr>'
+    + '<tr><td>AI考试</td><td>80%-100%</td><td>60%-80%</td><td>40%-60%</td><td>20%-40%</td><td>&lt;20%</td></tr>'
+    + '<tr><td>KPI</td><td>≥95或S</td><td>85-94或A</td><td>75-84或B</td><td>60-74或C</td><td>&lt;60或D</td></tr>'
+    + '<tr><td>管理幅度</td><td>>70人</td><td>50-70人</td><td>30-50人</td><td>10-30人</td><td>≤10人</td></tr>'
+    + '<tr><td>成本</td><td>≤20%</td><td>20%-40%</td><td>40%-60%</td><td>60%-80%</td><td>80%-100%</td></tr>'
+    + '<tr><td>个人成长</td><td>≥80</td><td>60-79</td><td>40-59</td><td>20-39</td><td>&lt;20</td></tr>'
+    + '<tr><td>项目标签</td><td>核心项目≥3</td><td>2.5-3</td><td>2-2.5</td><td>1.5-2</td><td>&lt;1.5</td></tr>'
+    + '<tr><td>AI评定</td><td>卓越(3)</td><td>优秀(2.5)</td><td>良好(2)</td><td>一般(1.5)</td><td>较差(&lt;1.5)</td></tr>'
+    + '</tbody></table></div></div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">员工九维评估列表（点击查看详情）</h3><div class="table-container" style="max-height:500px;overflow-y:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>序列</th><th style="text-align:center">学历</th><th style="text-align:center">勤奋度</th><th style="text-align:center">AI考试</th><th style="text-align:center">KPI</th><th style="text-align:center">管理幅度</th><th style="text-align:center">成本</th><th style="text-align:center">成长</th><th style="text-align:center">项目</th><th style="text-align:center">AI评定</th><th style="text-align:right">综合得分</th><th>绩效</th></tr></thead><tbody>'+empRows+'</tbody></table></div></div>'
+    + '<script>setTimeout(function(){var ctx=document.getElementById("hexChart");if(ctx){window.hexChartInstance=new Chart(ctx,{type:"radar",data:{labels:["学历","勤奋度","AI考试","KPI","管理幅度","成本","成长","项目","AI评定"],datasets:[{label:"员工评估",data:[0,0,0,0,0,0,0,0,0],backgroundColor:"rgba(37,99,235,0.2)",borderColor:"#2563eb",pointBackgroundColor:"#2563eb",pointRadius:4}]},options:{responsive:true,scales:{r:{beginAtZero:true,max:5,ticks:{stepSize:1}}},plugins:{legend:{display:false}}}})}},100)</script>';
+}
+
+function showHexDetail(empId) {
+  var emp = dashEmployees.find(function(e){return e.id===empId;});
+  if(!emp) return;
+  var eduVal = emp.edu>=5?5:emp.edu>=4?4:emp.edu>=3?3:emp.edu>=2?2:1;
+  var dilVal = emp.diligence>=3.6?5:emp.diligence>=3.0?4:emp.diligence>=2.4?3:emp.diligence>=1.8?2:1;
+  var aiVal = emp.aiExam>=80?5:emp.aiExam>=60?4:emp.aiExam>=40?3:emp.aiExam>=20?2:1;
+  var kpiVal = emp.kpi>=95?5:emp.kpi>=85?4:emp.kpi>=75?3:emp.kpi>=60?2:1;
+  var mgmtVal = emp.mgmtSpan>=70?5:emp.mgmtSpan>=50?4:emp.mgmtSpan>=30?3:emp.mgmtSpan>=10?2:1;
+  var costVal = emp.cost<=20?5:emp.cost<=40?4:emp.cost<=60?3:emp.cost<=80?2:1;
+  var growth = getEmpDim(emp,'growth'), projTag = getEmpDim(emp,'projectTag'), keyInfo = getEmpDim(emp,'keyInfo'), aiAssess = getEmpDim(emp,'aiAssess');
+  var growthVal = growth>=80?5:growth>=60?4:growth>=40?3:growth>=20?2:1;
+  var projVal = projTag>=3?5:projTag>=2.5?4:projTag>=2?3:projTag>=1.5?2:1;
+  var aiAssessVal = aiAssess>=3?5:aiAssess>=2.5?4:aiAssess>=2?3:aiAssess>=1.5?2:1;
+  
+  if(window.hexChartInstance) {
+    window.hexChartInstance.data.datasets[0].data = [eduVal,dilVal,aiVal,kpiVal,mgmtVal,costVal,growthVal,projVal,aiAssessVal];
+    window.hexChartInstance.data.datasets[0].label = emp.name;
+    window.hexChartInstance.update();
+  }
+  
+  var score = ((emp.edu*0.12+emp.diligence*0.12+(emp.kpi/33.33)*0.18+(growth/33.33)*0.10+(projTag/3*100/33.33)*0.08+(emp.mgmtSpan/33.33)*0.06+(100-emp.cost)/33.33*0.10+(keyInfo/33.33)*0.08+(aiAssess/3*100/33.33)*0.16)/3*100).toFixed(1);
+  var dims = [
+    ['学历', emp.edu>=5?'内部一学985':emp.edu>=4?'内部一学211':emp.edu>=3?'QS100':emp.edu>=2?'一本':'其他', eduVal, 'edu', emp.edu],
+    ['勤奋度', emp.diligence.toFixed(1), dilVal, 'diligence', emp.diligence],
+    ['AI考试', emp.aiExam+'分', aiVal, 'aiExam', emp.aiExam],
+    ['KPI', emp.kpi+'分', kpiVal, 'kpi', emp.kpi],
+    ['管理幅度', emp.mgmtSpan+'人', mgmtVal, 'mgmtSpan', emp.mgmtSpan],
+    ['成本', emp.cost+'%', costVal, 'cost', emp.cost],
+    ['个人成长', growth.toFixed(0), growthVal, 'growth', growth],
+    ['项目标签', projTag.toFixed(1), projVal, 'projectTag', projTag],
+    ['AI评定', aiAssess>=3?'卓越':aiAssess>=2?'良好':'一般', aiAssessVal, 'aiAssess', aiAssess]
+  ];
+  var detailHtml = '<h4 style="font-size:14px;font-weight:600;margin-bottom:12px">'+emp.name+' ('+emp.dept+' - '+emp.seq+') <span style="float:right;color:#2563eb;font-size:16px">综合 '+score+'分</span></h4>'
+    + '<table style="font-size:12px;margin-bottom:12px"><thead><tr><th>维度</th><th>数值</th><th style="text-align:center">评分</th><th style="text-align:right">灯色</th></tr></thead><tbody>';
+  dims.forEach(function(d){
+    detailHtml += '<tr><td style="font-weight:600">'+d[0]+'</td><td>'+d[1]+'</td><td style="text-align:center">'+d[2]+'分</td><td style="text-align:right;color:'+getTrafficColor(d[3],d[4])+'">●</td></tr>';
+  });
+  detailHtml += '</tbody></table>'
+    + '<div style="background:#f0f9ff;padding:10px;border-radius:6px;font-size:12px;color:#1e40af"><strong>AI简析：</strong>该员工综合得分'+score+'分。'+(emp.kpi>=85?'KPI表现优秀，':'KPI有提升空间。')+(emp.diligence>=3.0?'工作态度积极，':'需提升工作投入。')+(emp.mgmtSpan>=30?'管理幅度适中，':'管理幅度较小，建议培养管理能力。')+(growth>=60?'个人成长势头良好。':'建议加强培训与职业发展规划。')+'</div>';
+  document.getElementById('hexDetail').innerHTML = detailHtml;
+}
+
+function updateHexChart() {
+  var sel = document.getElementById('hexEmpSelect');
+  if(sel && sel.value) {
+    showHexDetail(sel.value);
+  }
+}
+
+function renderDashCustom() {
+  return '<div style="background:#fff;border-radius:8px;padding:40px;text-align:center">'
+    + '<div style="font-size:48px;margin-bottom:16px">🛠️</div>'
+    + '<h3 style="font-size:18px;font-weight:600;margin-bottom:12px">自定义看板</h3>'
+    + '<p style="color:#6b7280;margin-bottom:20px">此功能允许用户根据自身需求创建个性化数据看板，支持多维度数据组合和可视化展示。</p>'
+    + '<div style="background:#f8fafc;border-radius:8px;padding:20px;text-align:left;max-width:600px;margin:0 auto">'
+    + '<h4 style="font-size:14px;font-weight:600;margin-bottom:12px">功能特性</h4>'
+    + '<ul style="font-size:13px;color:#4b5563;line-height:1.8;padding-left:20px">'
+    + '<li>支持从系统字段中选择多个维度进行组合</li>'
+    + '<li>支持逻辑筛选（等于/不等于/包含/范围）</li>'
+    + '<li>支持多种图表类型（柱状图、折线图、饼图、雷达图等）</li>'
+    + '<li>支持数据穿透和下钻分析</li>'
+    + '<li>支持看板模板保存和分享</li>'
+    + '<li>支持定时刷新和数据导出</li>'
+    + '</ul></div>'
+    + '<button class="btn-primary" style="margin-top:20px" onclick="showToast(\'自定义看板功能开发中，敬请期待\')">创建自定义看板</button>'
+    + '</div>';
+}
+
 // ============ PRD NOTES ============
 function renderPrd() {
   var c = document.getElementById('prdContent');
@@ -2673,7 +2991,14 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">考勤→薪酬</div>• 出勤天数→出勤工资/日薪计算<br>• 迟到/早退→按规则扣款（30分钟内50元，超30分钟100元）<br>• 旷工→日薪×天数×2<br>• 加班费：工作日1.5倍、休息日2.0倍、法定节假日3.0倍<br>• 请假：事假无薪、病假按比例扣薪<br>• 全勤标志→全勤奖<br>• 考勤月度确认后自动推送，同步失败自动重试3次</div>'
     + '<div class="prd-note"><div class="prd-note-title">绩效→薪酬</div>• 绩效系数×绩效基数→绩效奖金（系数0.5~1.5）<br>• 考核等级对应比例：S(1.3)/A(1.1)/B(1.0)/C(0.8)/D(0.5)<br>• KPI达成率×KPI奖金基数→KPI奖金<br>• 缺失绩效数据的员工标红，可暂缓算薪或按默认系数1.0计算</div>'
     + '<div class="prd-note"><div class="prd-note-title">月度时序</div>• 每月1-20日：收集考勤数据<br>• 21日：考勤数据确认<br>• 22日：推送考勤数据→薪酬模块<br>• 23日：发布月度绩效结果<br>• 24日：推送绩效数据→薪酬模块<br>• 25日：执行一键算薪<br>• 26-28日：薪资审核（初审→复审→终审）<br>• 29日：生成发放清单与银行代发文件<br>• 次月10日：工资发放日，推送工资条</div>'
-    + '<div class="prd-note"><div class="prd-note-title">安全管控</div>• 薪酬数据属企业最高级敏感数据<br>• AES-256加密存储、TLS 1.2+传输<br>• 单次导出超50人强制拦截并告警<br>• 禁止上传至外部AI工具，系统层面检测拦截<br>• 全部薪酬操作记录审计日志，保留≥5年</div>'
+    + '<div class="prd-note"><div class="prd-note-title">安全管控</div>• 薪酬数据属企业最高级敏感数据<br>• AES-256加密存储、TLS 1.2+传输<br>• 单次导出超50人强制拦截并告警<br>• 禁止上传至外部AI工具，系统层面检测拦截<br>• 全部薪酬操作记录审计日志，保留≥5年</div>',
+
+    dashboard: '<div class="prd-note"><div class="prd-note-title">模块定位（4.2）</div>面向管理层（部门经理及以上）提供人力资源核心指标图形化展示，便于快速掌握组织动态。支持角色权限控制、AI智能分析、数据穿透下钻。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">权限控制（4.2.1）</div>• 部门经理：仅本部门数据<br>• 事业部VP：本事业部所有部门数据<br>• 高管/HRD：全公司数据<br>• HR专员：按分管范围</div>'
+    + '<div class="prd-note"><div class="prd-note-title">全局通用组件（4.2.2）</div>• 顶部筛选栏：时间范围（日/周/月/季/年）、部门树筛选（多选联动）、刷新按钮、全屏模式<br>• AI解析组件：每个卡片右上角"AI解析"按钮，生成≤300字智能分析（变化原因、异常提示、历史对比、行动建议）<br>• 自定义标签筛选：卡片内多维度逻辑筛选（等于/不等于/包含/范围）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">7大看板卡片（4.2.3）</div>• 入离职趋势：双轴图（柱状+折线），同比/环比，点击下钻员工明细<br>• 学历结构：环形图+可切换柱状图，点击区块下钻员工列表<br>• 勤奋度排名：柱状图+折线趋势，支持部门/序列维度切换<br>• 人力成本：柱状图+折线图（同比/环比），点击下钻成本明细<br>• 绩效分布：环形图+明细表格，展示S/A/B/C/D等级占比<br>• 六边形：雷达图+红绿灯评估，6维度人才画像<br>• 自定义看板：用户自建个性化看板</div>'
+    + '<div class="prd-note"><div class="prd-note-title">九维红绿灯规则（4.2.4）</div>9维度：学历(12%)、勤奋度(12%)、绩效(18%)、个人成长(10%)、项目标签(8%)、管理幅度(6%)、性价比(10%)、个人关键信息(8%)、AI综合评定(16%)<br>• 5分=黑灯（最高标准）• 4分=绿灯（优秀）• 3分=蓝灯（良好）• 2分=黄灯（待改进）• 1分=红灯（不合格）<br>综合得分 = [各维度归一化×权重] ÷ 3 × 100<br>点击员工可展开九维雷达图详情，支持AI简析</div>'
+    + '<div class="prd-note"><div class="prd-note-title">九维人才评价模型（4.2.4）</div>综合得分 = [学历×0.12 + 勤奋度×0.12 + 绩效×0.18 + 个人成长(归一化)×0.10 + 项目标签×0.08 + 管理幅度×0.06 + 性价比×0.10 + 个人关键信息(归一化)×0.08 + AI综合评定×0.16] ÷ 3 × 100<br>归一化：个人成长和个人关键信息（满分100）先÷100×3转换为3分制</div>'
   };
   c.innerHTML = prdData[currentModule] || '';
 }
