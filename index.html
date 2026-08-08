@@ -639,8 +639,8 @@ function renderPage() {
     case 'pay_calc': c.innerHTML = renderPayCalc(); break;
     case 'pay_dispatch': c.innerHTML = renderPayDispatch(); break;
     case 'pay_tax': c.innerHTML = renderPayTax(); break;
-    case 'dash_overview': c.innerHTML = renderDashOverview(); break;
-    case 'dash_hex_eval': c.innerHTML = renderDashHexEval(); break;
+    case 'dash_overview': c.innerHTML = renderDashOverview(); initOverviewCharts(); break;
+    case 'dash_hex_eval': c.innerHTML = renderDashHexEval(); initHexEvalCharts(); break;
     case 'dash_hex': c.innerHTML = renderDashHex(); break;
   }
 }
@@ -2588,16 +2588,11 @@ function renderDashOverview() {
     + '<div style="background:#fefce8;padding:12px;border-radius:6px;text-align:center"><div style="font-size:11px;color:#ca8a04">人均成本(万)</div><div style="font-size:20px;font-weight:700">17.8</div></div>'
     + '<div style="background:#faf5ff;padding:12px;border-radius:6px;text-align:center"><div style="font-size:11px;color:#7c3aed">平均勤奋度</div><div style="font-size:20px;font-weight:700">3.2</div></div>'
     + '<div style="background:#fef2f2;padding:12px;border-radius:6px;text-align:center"><div style="font-size:11px;color:#dc2626">空缺岗位</div><div style="font-size:20px;font-weight:700">8</div></div>'
-    + '</div></div>'
-    + '<scr'+'ipt>setTimeout(function(){'
-    + 'var tc=document.getElementById("trendChart");if(tc){new Chart(tc,{type:"bar",data:{labels:'+JSON.stringify(months)+',datasets:[{label:"入职人数",data:'+JSON.stringify(hireData)+',backgroundColor:"rgba(34,197,94,0.7)",yAxisID:"y"},{label:"离职人数",type:"line",data:'+JSON.stringify(leaveData)+',borderColor:"#dc2626",backgroundColor:"rgba(220,38,38,0.1)",yAxisID:"y",tension:0.3},{label:"净增人数",type:"line",data:'+JSON.stringify(netData)+',borderColor:"#2563eb",backgroundColor:"rgba(37,99,235,0.1)",yAxisID:"y",tension:0.3,borderDash:[5,5]}]},options:{responsive:true,scales:{y:{type:"linear",position:"left",title:{display:true,text:"人数"}}}}})}'
-    + 'var dp=document.getElementById("deptPieChart");if(dp){var dk=Object.keys('+JSON.stringify(deptCounts)+');var dv=Object.values('+JSON.stringify(deptCounts)+');new Chart(dp,{type:"pie",data:{labels:dk,datasets:[{data:dv,backgroundColor:["#16a34a","#2563eb","#eab308","#ea580c","#7c3aed","#06b6d4","#f97316","#64748b"]}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}'
-    + 'var lr=document.getElementById("leaveReasonChart");if(lr){new Chart(lr,{type:"doughnut",data:{labels:["个人发展","薪酬福利","家庭原因","工作压力","其他"],datasets:[{data:[28,22,15,12,13],backgroundColor:["#2563eb","#eab308","#16a34a","#dc2626","#9ca3af"]}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}'
-    + '},100)</scr'+'ipt>';
+    + '</div></div>';
 }
 
 var hexEvalTab = 'edu';
-function switchHexEvalTab(tab) { hexEvalTab = tab; document.getElementById('pageContainer').innerHTML = renderDashHexEval(); }
+function switchHexEvalTab(tab) { hexEvalTab = tab; document.getElementById('pageContainer').innerHTML = renderDashHexEval(); initHexEvalCharts(); }
 
 function renderDashHexEval() {
   var tabs = [{key:'edu',name:'\u5b66\u5386\u5206\u6790',icon:'\ud83c\udf93'},{key:'diligence',name:'\u52e4\u594b\u5ea6\u5206\u6790',icon:'\ud83d\udcaa'},{key:'cost',name:'\u6210\u672c\u5206\u6790',icon:'\ud83d\udcb0'},{key:'perf',name:'\u7ee9\u6548\u5206\u6790',icon:'\ud83c\udfc6'}];
@@ -2631,12 +2626,7 @@ function renderHexEvalEdu() {
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5404\u90e8\u95e8\u5b66\u5386\u7ed3\u6784</h3><canvas id="hexEduStacked" height="200"></canvas></div></div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5404\u5b66\u5386\u7efc\u5408\u80fd\u529b\u96f7\u8fbe</h3><canvas id="hexEduRadar" height="200"></canvas></div>'
-    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5b66\u5386\u7edf\u8ba1\u660e\u7ec6</h3><table><thead><tr><th>\u5b66\u5386</th><th style="text-align:right">\u4eba\u6570</th><th style="text-align:right">\u5360\u6bd4</th><th style="text-align:right">\u5e73\u5747\u7ee9\u6548</th><th style="text-align:right">\u79bb\u804c\u7387</th><th>\u4fe1\u53f7\u706f</th></tr></thead><tbody>'+tblRows+'</tbody></table></div></div>'
-    + '<scr'+'ipt>setTimeout(function(){'
-    + 'var p=document.getElementById("hexEduPie");if(p){new Chart(p,{type:"pie",data:{labels:'+JSON.stringify(labels)+',datasets:[{data:'+JSON.stringify(data)+',backgroundColor:'+JSON.stringify(colors)+'}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}})}'
-    + 'var s=document.getElementById("hexEduStacked");if(s){new Chart(s,{type:"bar",data:{labels:'+JSON.stringify(deptNames)+',datasets:'+JSON.stringify(stackedDatasets)+'},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,title:{display:true,text:"\u4eba\u6570"}}},plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}'
-    + 'var r=document.getElementById("hexEduRadar");if(r){new Chart(r,{type:"radar",data:{labels:'+JSON.stringify(radarLabels)+',datasets:[{label:"\u535a\u58eb",data:'+JSON.stringify(radarData['\u535a\u58eb'])+',borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)"},{label:"\u7855\u58eb",data:'+JSON.stringify(radarData['\u7855\u58eb'])+',borderColor:"#2563eb",backgroundColor:"rgba(37,99,235,0.1)"},{label:"\u672c\u79d1",data:'+JSON.stringify(radarData['\u672c\u79d1'])+',borderColor:"#eab308",backgroundColor:"rgba(234,179,8,0.1)"},{label:"\u5927\u4e13",data:'+JSON.stringify(radarData['\u5927\u4e13'])+',borderColor:"#ea580c",backgroundColor:"rgba(234,88,12,0.1)"}]},options:{responsive:true,scales:{r:{beginAtZero:true,max:100}},plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}'
-    + '},100)</scr'+'ipt>';
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5b66\u5386\u7edf\u8ba1\u660e\u7ec6</h3><table><thead><tr><th>\u5b66\u5386</th><th style="text-align:right">\u4eba\u6570</th><th style="text-align:right">\u5360\u6bd4</th><th style="text-align:right">\u5e73\u5747\u7ee9\u6548</th><th style="text-align:right">\u79bb\u804c\u7387</th><th>\u4fe1\u53f7\u706f</th></tr></thead><tbody>'+tblRows+'</tbody></table></div></div>';
 }
 
 function renderHexEvalDiligence() {
@@ -2656,12 +2646,7 @@ function renderHexEvalDiligence() {
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5404\u90e8\u95e8\u5e73\u5747\u52e4\u594b\u5ea6</h3><canvas id="hexDilDept" height="250"></canvas></div></div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u52e4\u594b\u5ea6\u4e0e\u7ee9\u6548\u5173\u7cfb</h3><canvas id="hexDilScatter" height="200"></canvas></div>'
-    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u52e4\u594b\u5ea6\u5206\u5e03</h3><table><thead><tr><th>\u533a\u95f4</th><th style="text-align:right">\u4eba\u6570</th><th style="text-align:right">\u5360\u6bd4</th><th style="text-align:right">\u5e73\u5747\u7ee9\u6548</th></tr></thead><tbody>'+distTbl+'</tbody></table></div></div>'
-    + '<scr'+'ipt>setTimeout(function(){'
-    + 'var b=document.getElementById("hexDilBar");if(b){new Chart(b,{type:"bar",data:{labels:'+JSON.stringify(labels)+',datasets:[{label:"\u52e4\u594b\u5ea6",data:'+JSON.stringify(data)+',backgroundColor:'+JSON.stringify(colors)+'}]},options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:5}}}})}'
-    + 'var d=document.getElementById("hexDilDept");if(d){new Chart(d,{type:"bar",data:{labels:'+JSON.stringify(deptNames)+',datasets:[{label:"\u5e73\u5747\u52e4\u594b\u5ea6",data:'+JSON.stringify(deptAvg)+',backgroundColor:'+JSON.stringify(deptAvg.map(function(v){return v>=3.5?"#16a34a":v>=3?"#2563eb":v>=2.5?"#eab308":"#dc2626";}))+'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:5}}}})}'
-    + 'var sc=document.getElementById("hexDilScatter");if(sc){new Chart(sc,{type:"scatter",data:{datasets:[{label:"\u9ad8\u52e4\u594b\u5ea6",data:[{x:4.5,y:92},{x:4.2,y:88},{x:4.8,y:90},{x:4.1,y:85},{x:4.6,y:87}],backgroundColor:"#16a34a"},{label:"\u4e2d\u52e4\u594b\u5ea6",data:[{x:3.2,y:78},{x:3.5,y:82},{x:3.0,y:75},{x:3.3,y:80},{x:3.1,y:77}],backgroundColor:"#2563eb"},{label:"\u4f4e\u52e4\u594b\u5ea6",data:[{x:2.0,y:65},{x:2.5,y:70},{x:1.8,y:68},{x:2.3,y:72},{x:1.5,y:63}],backgroundColor:"#dc2626"}]},options:{responsive:true,scales:{x:{title:{display:true,text:"\u52e4\u594b\u5ea6"},min:1,max:5},y:{title:{display:true,text:"\u7ee9\u6548"},min:50,max:100}},plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}'
-    + '},100)</scr'+'ipt>';
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u52e4\u594b\u5ea6\u5206\u5e03</h3><table><thead><tr><th>\u533a\u95f4</th><th style="text-align:right">\u4eba\u6570</th><th style="text-align:right">\u5360\u6bd4</th><th style="text-align:right">\u5e73\u5747\u7ee9\u6548</th></tr></thead><tbody>'+distTbl+'</tbody></table></div></div>';
 }
 
 function renderHexEvalCost() {
@@ -2683,12 +2668,7 @@ function renderHexEvalCost() {
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u6210\u672c\u7ed3\u6784\u5206\u5e03</h3><canvas id="hexCostDoughnut" height="200"></canvas></div></div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5404\u90e8\u95e8\u4eba\u5747\u6210\u672c\uff08\u4e07\u5143\uff09</h3><canvas id="hexCostPerCapita" height="200"></canvas></div>'
-    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u6210\u672c\u660e\u7ec6</h3><table><thead><tr><th>\u90e8\u95e8</th><th style="text-align:right">\u603b\u6210\u672c(\u4e07)</th><th style="text-align:right">\u4eba\u5747(\u4e07)</th><th style="text-align:right">\u540c\u6bd4</th></tr></thead><tbody>'+tblRows+'</tbody></table></div></div>'
-    + '<scr'+'ipt>setTimeout(function(){'
-    + 'var c=document.getElementById("hexCostCombo");if(c){new Chart(c,{type:"bar",data:{labels:'+JSON.stringify(depts)+',datasets:[{label:"\u4eba\u529b\u6210\u672c(\u4e07)",data:'+JSON.stringify(costData)+',backgroundColor:"rgba(37,99,235,0.7)",yAxisID:"y"},{label:"\u540c\u6bd4\u589e\u957f(%)",type:"line",data:'+JSON.stringify(yoyData)+',borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)",yAxisID:"y1",tension:0.3}]},options:{responsive:true,scales:{y:{type:"linear",position:"left",title:{display:true,text:"\u6210\u672c(\u4e07\u5143)"}},y1:{type:"linear",position:"right",title:{display:true,text:"\u540c\u6bd4\u589e\u957f(%)"},grid:{drawOnChartArea:false}}}}})}'
-    + 'var d=document.getElementById("hexCostDoughnut");if(d){new Chart(d,{type:"doughnut",data:{labels:'+JSON.stringify(structLabels)+',datasets:[{data:'+JSON.stringify(structData)+',backgroundColor:'+JSON.stringify(structColors)+'}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}})}'
-    + 'var p=document.getElementById("hexCostPerCapita");if(p){new Chart(p,{type:"bar",data:{labels:'+JSON.stringify(depts)+',datasets:[{label:"\u4eba\u5747\u6210\u672c",data:'+JSON.stringify(perCapita)+',backgroundColor:'+JSON.stringify(perCapita.map(function(v){return v>=18?"#dc2626":v>=16?"#eab308":v>=14?"#2563eb":"#16a34a";}))+'}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:"\u4e07\u5143"}}}}})}'
-    + '},100)</scr'+'ipt>';
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u6210\u672c\u660e\u7ec6</h3><table><thead><tr><th>\u90e8\u95e8</th><th style="text-align:right">\u603b\u6210\u672c(\u4e07)</th><th style="text-align:right">\u4eba\u5747(\u4e07)</th><th style="text-align:right">\u540c\u6bd4</th></tr></thead><tbody>'+tblRows+'</tbody></table></div></div>';
 }
 
 function renderHexEvalPerf() {
@@ -2714,12 +2694,7 @@ function renderHexEvalPerf() {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u5404\u90e8\u95e8\u7ee9\u6548\u96f7\u8fbe</h3><canvas id="hexPerfRadar" height="200"></canvas></div>'
     + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u7ee9\u6548\u7edf\u8ba1</h3><table><thead><tr><th>\u7b49\u7ea7</th><th style="text-align:right">\u4eba\u6570</th><th style="text-align:right">\u5360\u6bd4</th><th style="text-align:right">\u5f3a\u5236\u5206\u5e03</th><th style="text-align:right">\u504f\u5dee</th></tr></thead><tbody>'+tblRows+'</tbody></table></div></div>'
-    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u7ee9\u6548TOP15\uff08\u70b9\u51fb\u67e5\u770b\u8be6\u60c5\uff09</h3><div class="table-container"><table><thead><tr><th>#</th><th>\u5de5\u53f7</th><th>\u59d3\u540d</th><th>\u90e8\u95e8</th><th style="text-align:right">KPI</th><th>\u7b49\u7ea7</th><th>\u4fe1\u53f7\u706f</th></tr></thead><tbody>'+topRows+'</tbody></table></div></div>'
-    + '<scr'+'ipt>setTimeout(function(){'
-    + 'var d=document.getElementById("hexPerfDoughnut");if(d){new Chart(d,{type:"doughnut",data:{labels:'+JSON.stringify(perfLabels)+',datasets:[{data:'+JSON.stringify(perfData)+',backgroundColor:'+JSON.stringify(perfColors)+'}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}})}'
-    + 'var t=document.getElementById("hexPerfTrend");if(t){new Chart(t,{type:"line",data:{labels:'+JSON.stringify(months)+',datasets:[{label:"\u5e73\u5747\u7ee9\u6548",data:'+JSON.stringify(perfTrend)+',borderColor:"#2563eb",backgroundColor:"rgba(37,99,235,0.1)",fill:true,tension:0.3}]},options:{responsive:true,scales:{y:{min:70,max:90}},plugins:{legend:{display:false}}}})}'
-    + 'var r=document.getElementById("hexPerfRadar");if(r){new Chart(r,{type:"radar",data:{labels:["KPI","\u52e4\u594b\u5ea6","AI\u8003\u8bd5","\u6210\u957f","\u9879\u76ee\u6807\u7b7e","AI\u8bc4\u5b9a"],datasets:['+deptPerf.map(function(d,i){var clr=['#16a34a','#2563eb','#eab308','#ea580c','#7c3aed','#06b6d4'][i];return '{label:"'+d+'",data:['+deptPerfData[i]+','+(deptPerfData[i]*0.8).toFixed(0)+','+(deptPerfData[i]*0.85).toFixed(0)+','+(deptPerfData[i]*0.75).toFixed(0)+','+(deptPerfData[i]*0.7).toFixed(0)+','+(deptPerfData[i]*0.9).toFixed(0)+'],borderColor:"'+clr+'",backgroundColor:"'+clr+'11"}';}).join(',')+']},options:{responsive:true,scales:{r:{beginAtZero:true,max:100}},plugins:{legend:{position:"bottom",labels:{font:{size:9}}}}}})}'
-    + '},100)</scr'+'ipt>';
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">\u7ee9\u6548TOP15\uff08\u70b9\u51fb\u67e5\u770b\u8be6\u60c5\uff09</h3><div class="table-container"><table><thead><tr><th>#</th><th>\u5de5\u53f7</th><th>\u59d3\u540d</th><th>\u90e8\u95e8</th><th style="text-align:right">KPI</th><th>\u7b49\u7ea7</th><th>\u4fe1\u53f7\u706f</th></tr></thead><tbody>'+topRows+'</tbody></table></div></div>';
 }
 
 function renderDashHex() {
@@ -2806,6 +2781,108 @@ function showHexDetail(empId) {
 function updateHexChart() {
   var sel = document.getElementById('hexEmpSelect');
   if(sel && sel.value) { showHexDetail(sel.value); }
+}
+
+// ============ CHART INIT FUNCTIONS ============
+function initOverviewCharts() {
+  setTimeout(function(){
+    var months = ['1\u6708','2\u6708','3\u6708','4\u6708','5\u6708','6\u6708','7\u6708','8\u6708','9\u6708','10\u6708','11\u6708','12\u6708'];
+    var hireData = [12,8,15,10,18,14,22,11,16,20,9,13];
+    var leaveData = [5,8,6,10,7,12,9,6,8,11,5,7];
+    var netData = hireData.map(function(h,i){return h-leaveData[i];});
+    var tc=document.getElementById("trendChart");
+    if(tc){new Chart(tc,{type:"bar",data:{labels:months,datasets:[{label:"\u5165\u804c\u4eba\u6570",data:hireData,backgroundColor:"rgba(34,197,94,0.7)",yAxisID:"y"},{label:"\u79bb\u804c\u4eba\u6570",type:"line",data:leaveData,borderColor:"#dc2626",backgroundColor:"rgba(220,38,38,0.1)",yAxisID:"y",tension:0.3},{label:"\u51c0\u589e\u4eba\u6570",type:"line",data:netData,borderColor:"#2563eb",backgroundColor:"rgba(37,99,235,0.1)",yAxisID:"y",tension:0.3,borderDash:[5,5]}]},options:{responsive:true,scales:{y:{type:"linear",position:"left",title:{display:true,text:"\u4eba\u6570"}}}}})}
+    var deptCounts = {};
+    dashEmployees.forEach(function(e){ deptCounts[e.dept] = (deptCounts[e.dept]||0)+1; });
+    var dp=document.getElementById("deptPieChart");
+    if(dp){var dk=Object.keys(deptCounts);var dv=Object.values(deptCounts);new Chart(dp,{type:"pie",data:{labels:dk,datasets:[{data:dv,backgroundColor:["#16a34a","#2563eb","#eab308","#ea580c","#7c3aed","#06b6d4","#f97316","#64748b"]}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}
+    var lr=document.getElementById("leaveReasonChart");
+    if(lr){new Chart(lr,{type:"doughnut",data:{labels:["\u4e2a\u4eba\u53d1\u5c55","\u85aa\u916c\u798f\u5229","\u5bb6\u5ead\u539f\u56e0","\u5de5\u4f5c\u538b\u529b","\u5176\u4ed6"],datasets:[{data:[28,22,15,12,13],backgroundColor:["#2563eb","#eab308","#16a34a","#dc2626","#9ca3af"]}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}
+  },100);
+}
+
+function initHexEvalCharts() {
+  if(hexEvalTab==='edu') initHexEvalEduCharts();
+  else if(hexEvalTab==='diligence') initHexEvalDiligenceCharts();
+  else if(hexEvalTab==='cost') initHexEvalCostCharts();
+  else if(hexEvalTab==='perf') initHexEvalPerfCharts();
+}
+
+function initHexEvalEduCharts() {
+  setTimeout(function(){
+    var eduCounts = {'\u535a\u58eb':8,'\u7855\u58eb':22,'\u672c\u79d1':45,'\u5927\u4e13':12,'\u5176\u4ed6':3};
+    var labels = Object.keys(eduCounts);
+    var data = Object.values(eduCounts);
+    var colors = ['#16a34a','#2563eb','#eab308','#ea580c','#9ca3af'];
+    var deptEdu = {'\u6280\u672f\u7814\u53d1\u90e8':{'\u535a\u58eb':3,'\u7855\u58eb':8,'\u672c\u79d1':12,'\u5927\u4e13':4,'\u5176\u4ed6':1},'\u4ea7\u54c1\u8bbe\u8ba1\u90e8':{'\u535a\u58eb':2,'\u7855\u58eb':6,'\u672c\u79d1':10,'\u5927\u4e13':3,'\u5176\u4ed6':0},'\u5e02\u573a\u8425\u9500\u90e8':{'\u535a\u58eb':1,'\u7855\u58eb':4,'\u672c\u79d1':11,'\u5927\u4e13':2,'\u5176\u4ed6':1},'\u4eba\u529b\u8d44\u6e90\u90e8':{'\u535a\u58eb':0,'\u7855\u58eb':2,'\u672c\u79d1':5,'\u5927\u4e13':2,'\u5176\u4ed6':0},'\u8d22\u52a1\u7ba1\u7406\u90e8':{'\u535a\u58eb':1,'\u7855\u58eb':1,'\u672c\u79d1':4,'\u5927\u4e13':1,'\u5176\u4ed6':1},'\u8fd0\u8425\u7ba1\u7406\u90e8':{'\u535a\u58eb':1,'\u7855\u58eb':1,'\u672c\u79d1':3,'\u5927\u4e13':2,'\u5176\u4ed6':0}};
+    var deptNames = Object.keys(deptEdu);
+    var eduLevels = ['\u535a\u58eb','\u7855\u58eb','\u672c\u79d1','\u5927\u4e13','\u5176\u4ed6'];
+    var stackedDatasets = eduLevels.map(function(el,ei){ return {label:el,data:deptNames.map(function(d){return deptEdu[d][el]||0;}),backgroundColor:colors[ei]}; });
+    var radarLabels = ['\u5b66\u5386','\u52e4\u594b\u5ea6','\u7ee9\u6548','\u6210\u672c\u610f\u8bc6','\u6210\u957f\u6f5c\u529b','AI\u80fd\u529b'];
+    var radarData = {'\u535a\u58eb':[95,85,92,78,88,90],'\u7855\u58eb':[82,80,86,75,82,78],'\u672c\u79d1':[65,75,80,72,75,68],'\u5927\u4e13':[45,70,74,70,65,55],'\u5176\u4ed6':[30,65,68,68,60,45]};
+    var p=document.getElementById("hexEduPie");
+    if(p){new Chart(p,{type:"pie",data:{labels:labels,datasets:[{data:data,backgroundColor:colors}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}})}
+    var s=document.getElementById("hexEduStacked");
+    if(s){new Chart(s,{type:"bar",data:{labels:deptNames,datasets:stackedDatasets},options:{responsive:true,scales:{x:{stacked:true},y:{stacked:true,title:{display:true,text:"\u4eba\u6570"}}},plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}
+    var r=document.getElementById("hexEduRadar");
+    if(r){new Chart(r,{type:"radar",data:{labels:radarLabels,datasets:[{label:"\u535a\u58eb",data:radarData['\u535a\u58eb'],borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)"},{label:"\u7855\u58eb",data:radarData['\u7855\u58eb'],borderColor:"#2563eb",backgroundColor:"rgba(37,99,235,0.1)"},{label:"\u672c\u79d1",data:radarData['\u672c\u79d1'],borderColor:"#eab308",backgroundColor:"rgba(234,179,8,0.1)"},{label:"\u5927\u4e13",data:radarData['\u5927\u4e13'],borderColor:"#ea580c",backgroundColor:"rgba(234,88,12,0.1)"}]},options:{responsive:true,scales:{r:{beginAtZero:true,max:100}},plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}
+  },100);
+}
+
+function initHexEvalDiligenceCharts() {
+  setTimeout(function(){
+    var sorted = dashEmployees.slice().sort(function(a,b){return b.diligence-a.diligence;});
+    var top15 = sorted.slice(0,15);
+    var labels = top15.map(function(e){return e.name;});
+    var data = top15.map(function(e){return e.diligence;});
+    var colors = data.map(function(v){return v>=4?'#1a1a1a':v>=3.5?'#16a34a':v>=3?'#2563eb':v>=2?'#eab308':'#dc2626';});
+    var deptDil = {};
+    dashEmployees.forEach(function(e){ if(!deptDil[e.dept]) deptDil[e.dept]={sum:0,cnt:0}; deptDil[e.dept].sum+=e.diligence; deptDil[e.dept].cnt++; });
+    var deptNames = Object.keys(deptDil);
+    var deptAvg = deptNames.map(function(d){return +(deptDil[d].sum/deptDil[d].cnt).toFixed(2);});
+    var b=document.getElementById("hexDilBar");
+    if(b){new Chart(b,{type:"bar",data:{labels:labels,datasets:[{label:"\u52e4\u594b\u5ea6",data:data,backgroundColor:colors}]},options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:5}}}})}
+    var d=document.getElementById("hexDilDept");
+    if(d){new Chart(d,{type:"bar",data:{labels:deptNames,datasets:[{label:"\u5e73\u5747\u52e4\u594b\u5ea6",data:deptAvg,backgroundColor:deptAvg.map(function(v){return v>=3.5?"#16a34a":v>=3?"#2563eb":v>=2.5?"#eab308":"#dc2626";})}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:5}}}})}
+    var sc=document.getElementById("hexDilScatter");
+    if(sc){new Chart(sc,{type:"scatter",data:{datasets:[{label:"\u9ad8\u52e4\u594b\u5ea6",data:[{x:4.5,y:92},{x:4.2,y:88},{x:4.8,y:90},{x:4.1,y:85},{x:4.6,y:87}],backgroundColor:"#16a34a"},{label:"\u4e2d\u52e4\u594b\u5ea6",data:[{x:3.2,y:78},{x:3.5,y:82},{x:3.0,y:75},{x:3.3,y:80},{x:3.1,y:77}],backgroundColor:"#2563eb"},{label:"\u4f4e\u52e4\u594b\u5ea6",data:[{x:2.0,y:65},{x:2.5,y:70},{x:1.8,y:68},{x:2.3,y:72},{x:1.5,y:63}],backgroundColor:"#dc2626"}]},options:{responsive:true,scales:{x:{title:{display:true,text:"\u52e4\u594b\u5ea6"},min:1,max:5},y:{title:{display:true,text:"\u7ee9\u6548"},min:50,max:100}},plugins:{legend:{position:"bottom",labels:{font:{size:10}}}}}})}
+  },100);
+}
+
+function initHexEvalCostCharts() {
+  setTimeout(function(){
+    var depts = ['\u6280\u672f\u7814\u53d1\u90e8','\u4ea7\u54c1\u8bbe\u8ba1\u90e8','\u5e02\u573a\u8425\u9500\u90e8','\u4eba\u529b\u8d44\u6e90\u90e8','\u8d22\u52a1\u7ba1\u7406\u90e8','\u8fd0\u8425\u7ba1\u7406\u90e8'];
+    var costData = [580,320,280,150,120,150];
+    var yoyData = [12,8,-3,5,6,15];
+    var perCapita = [19.3,16.8,15.5,15.0,13.3,16.7];
+    var structLabels = ['\u5de5\u8d44','\u793e\u4fdd','\u516c\u79ef\u91d1','\u5956\u91d1','\u5176\u4ed6'];
+    var structData = [68,15,7,6,4];
+    var structColors = ['#2563eb','#16a34a','#eab308','#ea580c','#9ca3af'];
+    var c=document.getElementById("hexCostCombo");
+    if(c){new Chart(c,{type:"bar",data:{labels:depts,datasets:[{label:"\u4eba\u529b\u6210\u672c(\u4e07)",data:costData,backgroundColor:"rgba(37,99,235,0.7)",yAxisID:"y"},{label:"\u540c\u6bd4\u589e\u957f(%)",type:"line",data:yoyData,borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.1)",yAxisID:"y1",tension:0.3}]},options:{responsive:true,scales:{y:{type:"linear",position:"left",title:{display:true,text:"\u6210\u672c(\u4e07\u5143)"}},y1:{type:"linear",position:"right",title:{display:true,text:"\u540c\u6bd4\u589e\u957f(%)"},grid:{drawOnChartArea:false}}}}})}
+    var d=document.getElementById("hexCostDoughnut");
+    if(d){new Chart(d,{type:"doughnut",data:{labels:structLabels,datasets:[{data:structData,backgroundColor:structColors}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}})}
+    var p=document.getElementById("hexCostPerCapita");
+    if(p){new Chart(p,{type:"bar",data:{labels:depts,datasets:[{label:"\u4eba\u5747\u6210\u672c",data:perCapita,backgroundColor:perCapita.map(function(v){return v>=18?"#dc2626":v>=16?"#eab308":v>=14?"#2563eb":"#16a34a";})}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:"\u4e07\u5143"}}}}})}
+  },100);
+}
+
+function initHexEvalPerfCharts() {
+  setTimeout(function(){
+    var perfLabels = ['S','A','B','C','D'];
+    var perfData = [12,28,35,10,5];
+    var perfColors = ['#16a34a','#2563eb','#eab308','#ea580c','#dc2626'];
+    var months = ['1\u6708','2\u6708','3\u6708','4\u6708','5\u6708','6\u6708','7\u6708','8\u6708'];
+    var perfTrend = [78,80,79,82,81,83,85,82.5];
+    var deptPerf = ['\u6280\u672f\u7814\u53d1\u90e8','\u4ea7\u54c1\u8bbe\u8ba1\u90e8','\u5e02\u573a\u8425\u9500\u90e8','\u4eba\u529b\u8d44\u6e90\u90e8','\u8d22\u52a1\u7ba1\u7406\u90e8','\u8fd0\u8425\u7ba1\u7406\u90e8'];
+    var deptPerfData = [86,84,80,78,76,82];
+    var d=document.getElementById("hexPerfDoughnut");
+    if(d){new Chart(d,{type:"doughnut",data:{labels:perfLabels,datasets:[{data:perfData,backgroundColor:perfColors}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11}}}}}})}
+    var t=document.getElementById("hexPerfTrend");
+    if(t){new Chart(t,{type:"line",data:{labels:months,datasets:[{label:"\u5e73\u5747\u7ee9\u6548",data:perfTrend,borderColor:"#2563eb",backgroundColor:"rgba(37,99,235,0.1)",fill:true,tension:0.3}]},options:{responsive:true,scales:{y:{min:70,max:90}},plugins:{legend:{display:false}}}})}
+    var r=document.getElementById("hexPerfRadar");
+    if(r){new Chart(r,{type:"radar",data:{labels:["KPI","\u52e4\u594b\u5ea6","AI\u8003\u8bd5","\u6210\u957f","\u9879\u76ee\u6807\u7b7e","AI\u8bc4\u5b9a"],datasets:deptPerf.map(function(d,i){var clr=['#16a34a','#2563eb','#eab308','#ea580c','#7c3aed','#06b6d4'][i];return {label:d,data:[deptPerfData[i],(deptPerfData[i]*0.8).toFixed(0),(deptPerfData[i]*0.85).toFixed(0),(deptPerfData[i]*0.75).toFixed(0),(deptPerfData[i]*0.7).toFixed(0),(deptPerfData[i]*0.9).toFixed(0)],borderColor:clr,backgroundColor:clr+"11"};})},options:{responsive:true,scales:{r:{beginAtZero:true,max:100}},plugins:{legend:{position:"bottom",labels:{font:{size:9}}}}}})}
+  },100);
 }
 
 
