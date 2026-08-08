@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HR人事管理系统 - 原型</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -641,7 +640,7 @@ function renderPage() {
     case 'pay_tax': c.innerHTML = renderPayTax(); break;
     case 'dash_overview': c.innerHTML = renderDashOverview(); initOverviewCharts(); break;
     case 'dash_hex_eval': c.innerHTML = renderDashHexEval(); initHexEvalCharts(); break;
-    case 'dash_hex': c.innerHTML = renderDashHex(); break;
+    case 'dash_hex': c.innerHTML = renderDashHex(); initDashHexChart(); break;
   }
 }
 
@@ -2737,8 +2736,7 @@ function renderDashHex() {
     + '<tr><td>项目标签</td><td>核心>=3</td><td>2.5-3</td><td>2-2.5</td><td>1.5-2</td><td>&lt;1.5</td></tr>'
     + '<tr><td>AI评定</td><td>卓越(3)</td><td>优秀(2.5)</td><td>良好(2)</td><td>一般(1.5)</td><td>较差(&lt;1.5)</td></tr>'
     + '</tbody></table></div></div></div>'
-    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">员工九维评估列表（点击查看详情）</h3><div class="table-container" style="max-height:500px;overflow-y:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>序列</th><th style="text-align:center">学历</th><th style="text-align:center">勤奋度</th><th style="text-align:center">AI考试</th><th style="text-align:center">KPI</th><th style="text-align:center">管理幅度</th><th style="text-align:center">成本</th><th style="text-align:center">成长</th><th style="text-align:center">项目</th><th style="text-align:center">AI评定</th><th style="text-align:right">综合得分</th><th>绩效</th></tr></thead><tbody>'+empRows+'</tbody></table></div></div>'
-    + '<scr'+'ipt>setTimeout(function(){var ctx=document.getElementById("hexChart");if(ctx){window.hexChartInstance=new Chart(ctx,{type:"radar",data:{labels:["学历","勤奋度","AI考试","KPI","管理幅度","成本","成长","项目","AI评定"],datasets:[{label:"员工评估",data:[0,0,0,0,0,0,0,0,0],backgroundColor:"rgba(37,99,235,0.2)",borderColor:"#2563eb",pointBackgroundColor:"#2563eb",pointRadius:4}]},options:{responsive:true,scales:{r:{beginAtZero:true,max:5,ticks:{stepSize:1}}},plugins:{legend:{display:false}}}})}},100)</scr'+'ipt>';
+    + '<div style="background:#fff;border-radius:8px;padding:20px"><h3 style="font-size:16px;font-weight:600;margin-bottom:12px">员工九维评估列表（点击查看详情）</h3><div class="table-container" style="max-height:500px;overflow-y:auto"><table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>序列</th><th style="text-align:center">学历</th><th style="text-align:center">勤奋度</th><th style="text-align:center">AI考试</th><th style="text-align:center">KPI</th><th style="text-align:center">管理幅度</th><th style="text-align:center">成本</th><th style="text-align:center">成长</th><th style="text-align:center">项目</th><th style="text-align:center">AI评定</th><th style="text-align:right">综合得分</th><th>绩效</th></tr></thead><tbody>'+empRows+'</tbody></table></div></div>';
 }
 
 function showHexDetail(empId) {
@@ -2784,6 +2782,13 @@ function updateHexChart() {
 }
 
 // ============ CHART INIT FUNCTIONS ============
+function initDashHexChart() {
+  setTimeout(function(){
+    var ctx=document.getElementById("hexChart");
+    if(ctx){window.hexChartInstance=new Chart(ctx,{type:"radar",data:{labels:["\u5b66\u5386","\u52e4\u594b\u5ea6","AI\u8003\u8bd5","KPI","\u7ba1\u7406\u5e45\u5ea6","\u6210\u672c","\u6210\u957f","\u9879\u76ee","AI\u8bc4\u5b9a"],datasets:[{label:"\u5458\u5de5\u8bc4\u4f30",data:[0,0,0,0,0,0,0,0,0],backgroundColor:"rgba(37,99,235,0.2)",borderColor:"#2563eb",pointBackgroundColor:"#2563eb",pointRadius:4}]},options:{responsive:true,scales:{r:{beginAtZero:true,max:5,ticks:{stepSize:1}}},plugins:{legend:{display:false}}}})}
+  },100);
+}
+
 function initOverviewCharts() {
   setTimeout(function(){
     var months = ['1\u6708','2\u6708','3\u6708','4\u6708','5\u6708','6\u6708','7\u6708','8\u6708','9\u6708','10\u6708','11\u6708','12\u6708'];
