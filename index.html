@@ -22,6 +22,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .prd-toggle { position: fixed; right: 320px; top: 50%; transform: translateY(-50%); z-index: 101; background: #f59e0b; color: #fff; border: none; padding: 12px 6px; cursor: pointer; border-radius: 6px 0 0 6px; writing-mode: vertical-rl; font-size: 12px; transition: right .3s; }
 .prd-toggle.panel-hidden { right: 0; }
 .prd-note { background: #fff; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; }
+.prd-note.boundary { border-color: #93c5fd; background: #f0f7ff; }
+.prd-note.boundary .prd-note-title { color: #1d4ed8; }
+.prd-note.boundary .prd-note-title::before { content: '📐'; margin-right: 4px; }
 .prd-note-title { font-weight: 700; color: #92400e; margin-bottom: 6px; font-size: 13px; }
 .highlight { background: #fef08a; padding: 1px 4px; border-radius: 3px; }
 .flow { background: #dcfce7; border: 1px solid #86efac; border-radius: 6px; padding: 10px; margin: 8px 0; font-size: 12px; color: #166534; }
@@ -696,16 +699,65 @@ function togglePrdPanel() {
   document.getElementById('mainContent').classList.toggle('full-width', !prdVisible);
 }
 
-// ============ VALIDATION ============
+// ============ VALIDATION（支持最值/长度/格式边界校验） ============
+// 支持的 data- 属性：
+//   data-required            必填
+//   data-label="手机号"       错误提示中显示的字段名
+//   data-min / data-max      数值最值（含边界）
+//   data-minlength / data-maxlength  文本长度边界（含边界）
+//   data-pattern             正则格式校验
+//   data-pattern-msg         格式错误的提示文案
 function validateForm(container) {
+  if(!container) return false;
   var valid = true;
-  var fields = container.querySelectorAll('[data-required]');
+  var firstError = null;
+  var fields = container.querySelectorAll('[data-required],[data-min],[data-max],[data-minlength],[data-maxlength],[data-pattern]');
   fields.forEach(function(f) {
+    var label = f.getAttribute('data-label') || '该项';
     var val = (f.value || '').trim();
-    if(!val) { f.classList.add('error'); valid=false; }
-    else { f.classList.remove('error'); }
+    var msg = null;
+    // 1) 必填
+    if(f.hasAttribute('data-required') && !val) {
+      msg = label + '为必填项';
+    }
+    // 2) 数值最值
+    else if(val && (f.hasAttribute('data-min') || f.hasAttribute('data-max'))) {
+      var num = parseFloat(val);
+      var min = f.hasAttribute('data-min') ? parseFloat(f.getAttribute('data-min')) : null;
+      var max = f.hasAttribute('data-max') ? parseFloat(f.getAttribute('data-max')) : null;
+      if(isNaN(num)) msg = label + '必须为数字';
+      else if(min!==null && num < min) msg = label + '不能小于' + min;
+      else if(max!==null && num > max) msg = label + '不能大于' + max;
+    }
+    // 3) 文本长度边界
+    else if(val && (f.hasAttribute('data-minlength') || f.hasAttribute('data-maxlength'))) {
+      var minLen = f.hasAttribute('data-minlength') ? parseInt(f.getAttribute('data-minlength')) : null;
+      var maxLen = f.hasAttribute('data-maxlength') ? parseInt(f.getAttribute('data-maxlength')) : null;
+      if(minLen!==null && val.length < minLen) msg = label + '不能少于' + minLen + '个字（当前' + val.length + '字）';
+      else if(maxLen!==null && val.length > maxLen) msg = label + '不能超过' + maxLen + '个字（当前' + val.length + '字）';
+    }
+    // 4) 格式
+    else if(val && f.hasAttribute('data-pattern')) {
+      var re = new RegExp('^' + f.getAttribute('data-pattern') + '$');
+      if(!re.test(val)) msg = f.getAttribute('data-pattern-msg') || (label + '格式不正确');
+    }
+    // 展示结果
+    if(msg) {
+      valid = false;
+      f.classList.add('error');
+      var em = f.parentElement.querySelector('.error-msg');
+      if(em) { em.textContent = msg; em.style.display = 'block'; }
+      if(!firstError) firstError = { field: f, msg: msg };
+    } else if(f.classList.contains('error')) {
+      f.classList.remove('error');
+      var em2 = f.parentElement.querySelector('.error-msg');
+      if(em2) { em2.style.display = 'none'; }
+    }
   });
-  if(!valid) showToast('请填写所有必填字段','error');
+  if(!valid) {
+    showToast(firstError ? firstError.msg : '请检查表单填写', 'error');
+    if(firstError) firstError.field.focus();
+  }
   return valid;
 }
 
@@ -823,7 +875,7 @@ function renderOnboard() {
     ops += '<span class="op-link'+(s==='合同已完成'?'':' disabled')+'" onclick="archiveOnboard('+r.id+')">归档</span>';
     return '<tr id="onboard-row-'+r.id+'"'+(dead?' style="opacity:.5"':'')+'><td>'+r.name+'</td><td>'+r.bu+'</td><td>'+r.dept+'</td><td>'+r.pos+'</td><td>'+r.date+'</td><td>'+maskId(r.idCard)+'</td><td>'+maskPhone(r.phone)+'</td><td><span class="badge '+(r.source==='OA'?'badge-blue':'badge-gray')+'">'+r.source+'</span></td><td><span class="badge '+getStatusBadge(r.status)+'">'+r.status+'</span></td><td style="white-space:nowrap">'+ops+'</td></tr>';
   }).join('');
-  return tabHtml + '<div class="page-header"><h1 class="page-title">入职管理</h1><button class="btn-primary" onclick="openOnboardForm()">+ 手动录入</button></div>'
+  return tabHtml + '<div class="page-header"><h1 class="page-title">入职管理</h1><div style="display:flex;gap:8px;"><button class="btn-secondary" onclick="openBatchImport()">⬆ 批量导入</button><button class="btn-primary" onclick="openOnboardForm()">+ 手动录入</button></div></div>'
   + '<div class="filter-bar">'
   + '<div class="filter-item"><label>姓名</label><input placeholder="模糊搜索"></div>'
   + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select></div>'
@@ -855,8 +907,8 @@ function openOnboardForm() {
   var html = '<div class="modal-title">手动录入 / 办理入职</div>'
   + '<form id="onboardFormEl" onsubmit="return false">'
   + '<div class="form-section"><div class="form-section-title">基本信息</div><div class="form-grid">'
-  + '<div class="form-group"><label><span class="req">*</span> 姓名</label><input data-required placeholder="请输入姓名"><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label><span class="req">*</span> 身份证号</label><input data-required placeholder="18位身份证号" oninput="parseIdCard(this.value)" maxlength="18"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 姓名</label><input data-required data-label="姓名" data-minlength="2" data-maxlength="20" placeholder="2-20个字符"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 身份证号</label><input data-required data-label="身份证号" data-pattern="[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]" data-pattern-msg="身份证号须为18位有效格式（含出生日期与顺序位）" oninput="parseIdCard(this.value)" maxlength="18"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label>性别</label><input id="formGender" disabled placeholder="自动识别"></div>'
   + '<div class="form-group"><label>出生日期</label><input id="formBirthday" disabled placeholder="自动识别"></div>'
   + '<div class="form-group"><label><span class="req">*</span> 身份证有效期起</label><input data-required type="date"><span class="error-msg">必填</span></div>'
@@ -864,14 +916,14 @@ function openOnboardForm() {
   + '<div class="form-group"><label><span class="req">*</span> 政治面貌</label><select data-required><option value="">请选择</option><option>群众</option><option>共青团员</option><option>中共党员</option><option>民主党派</option></select><span class="error-msg">必填</span></div>'
   + '</div></div>'
   + '<div class="form-section"><div class="form-section-title">联系方式</div><div class="form-grid">'
-  + '<div class="form-group"><label><span class="req">*</span> 手机号</label><input data-required placeholder="11位手机号" maxlength="11"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 手机号</label><input data-required data-label="手机号" data-pattern="1[3-9]\\d{9}" data-pattern-msg="手机号须为1开头的11位有效号码" placeholder="11位手机号" maxlength="11"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label>私人邮箱</label><input type="email" placeholder="选填"></div>'
   + '<div class="form-group"><label><span class="req">*</span> QQ号</label><input data-required placeholder="请输入QQ号"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 微信号</label><input data-required placeholder="请输入微信号"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 通讯地址</label><input data-required placeholder="请输入通讯地址"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 紧急联系人姓名</label><input data-required><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 紧急联系人关系</label><select data-required><option value="">请选择</option><option>父母</option><option>配偶</option><option>兄弟姐妹</option><option>朋友</option></select><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label><span class="req">*</span> 紧急联系人手机号</label><input data-required maxlength="11"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 紧急联系人手机号</label><input data-required data-label="紧急联系人手机号" data-pattern="1[3-9]\\d{9}" data-pattern-msg="紧急联系人手机号须为11位有效号码" maxlength="11"><span class="error-msg">必填</span></div>'
   + '</div></div>'
   + '<div class="form-section"><div class="form-section-title">学历背景</div>'
   + '<div id="eduRows"><div class="dynamic-row">'
@@ -897,7 +949,7 @@ function openOnboardForm() {
   + '</div></div>'
   + '<div class="form-section"><div class="form-section-title">银行卡信息</div><div class="form-grid">'
   + '<div class="form-group"><label><span class="req">*</span> 开户银行</label><select data-required><option value="">请选择</option><option>中国工商银行</option><option>中国建设银行</option><option>中国农业银行</option><option>中国银行</option><option>招商银行</option></select><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label><span class="req">*</span> 银行账号</label><input data-required><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 银行账号</label><input data-required data-label="银行账号" data-pattern="\\d{12,19}" data-pattern-msg="银行账号须为12-19位数字" maxlength="19" placeholder="12-19位数字"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 所在省</label><select data-required><option value="">请选择</option><option>广东省</option><option>北京市</option><option>上海市</option><option>浙江省</option><option>江苏省</option></select><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 所在市</label><select data-required><option value="">请选择</option><option>深圳市</option><option>广州市</option><option>杭州市</option><option>南京市</option></select><span class="error-msg">必填</span></div>'
   + '</div></div>'
@@ -912,8 +964,8 @@ function openOnboardForm() {
   + '<div class="add-row-btn" onclick="addWorkRow()">+ 新增工作经历</div>'
   + '</div>'
   + '<div class="form-section"><div class="form-section-title">入职信息</div><div class="form-grid">'
-  + '<div class="form-group"><label><span class="req">*</span> 入职日期</label><input data-required type="date"><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label><span class="req">*</span> 试用期(月)</label><select data-required><option value="">请选择</option><option>1</option><option>2</option><option>3</option><option>6</option></select><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 入职日期</label><input data-required data-label="入职日期" type="date"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 试用期(月)</label><select data-required data-label="试用期"><option value="">请选择</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><span class="error-msg" style="display:none"></span><span style="font-size:11px;color:#9ca3af;">法定上限6个月；延长后总试用期不超过6个月</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 部门</label><select data-required><option value="">请选择</option>'+DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('')+'</select><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 岗位</label><select data-required><option value="">请选择</option>'+POSITIONS.map(function(p){return '<option>'+p+'</option>';}).join('')+'</select><span class="error-msg">必填</span></div>'
   + '</div></div>'
@@ -934,19 +986,59 @@ function openOnboardForm() {
   openModal(html, true);
 }
 function addEduRow() {
+  var container = document.getElementById('eduRows');
+  // 学历记录上限：第一/第二/第三/最新学历，共4条
+  if(container.children.length >= 4) { showToast('学历记录最多4条（第一至第三学历+最新学历）','error'); return; }
   var row = document.createElement('div');
   row.className='dynamic-row';
   row.innerHTML='<div class="form-group"><label>学历</label><select><option value="">请选择</option><option>大专</option><option>本科</option><option>硕士</option><option>博士</option></select></div><div class="form-group"><label>毕业院校</label><input></div><div class="form-group"><label>毕业专业</label><input></div><div class="form-group"><label>毕业时间</label><input type="date"></div><span class="remove-row-btn" onclick="this.parentElement.remove()">&times;</span>';
-  document.getElementById('eduRows').appendChild(row);
+  container.appendChild(row);
+  if(container.children.length === 4) showToast('已达学历记录上限（4条）','error');
 }
 function addWorkRow() {
+  var container = document.getElementById('workRows');
+  // 工作经历上限10条（超出建议在简历附件中体现）
+  if(container.children.length >= 10) { showToast('工作经历最多10条，更早经历请上传简历附件','error'); return; }
   var row = document.createElement('div');
   row.className='dynamic-row';
   row.innerHTML='<div class="form-group"><label>上家单位名称</label><input></div><div class="form-group"><label>工作岗位</label><input></div><div class="form-group"><label>起始年月</label><input type="month"></div><div class="form-group"><label>结束年月</label><input type="month"></div><span class="remove-row-btn" onclick="this.parentElement.remove()">&times;</span>';
-  document.getElementById('workRows').appendChild(row);
+  container.appendChild(row);
 }
 function submitOnboardForm() {
   if(validateForm(document.getElementById('onboardFormEl'))) { showToast('入职信息提交成功'); closeModal(); }
+}
+
+// ---- 入职批量导入（三级功能） ----
+function openBatchImport() {
+  var html = '<div class="modal-title">批量导入待入职记录</div><form id="batchImportEl" onsubmit="return false">'
+  + '<div class="warning-box">⚠️ 导入前请先下载最新模板，旧版模板字段可能不兼容。单次最多导入 <b>500</b> 条。</div>'
+  + '<div class="form-section"><div class="form-section-title">第一步：下载导入模板</div>'
+  + '<div style="display:flex;gap:12px;align-items:center;">'
+  + '<button class="btn-secondary" type="button" onclick="showToast(\'模板已下载：待入职批量导入模板V2.1.xlsx\')">⬇ 下载模板（Excel）</button>'
+  + '<span style="font-size:12px;color:#6b7280;">模板版本 V2.1 · 含字段校验说明Sheet · 30个字段</span>'
+  + '</div></div>'
+  + '<div class="form-section"><div class="form-section-title">第二步：上传填写好的文件</div>'
+  + '<div class="form-group"><label><span class="req">*</span> 选择文件</label><input type="file" accept=".xlsx,.xls" data-required data-label="导入文件" data-pattern=".+\\.(xlsx|xls)$" data-pattern-msg="仅支持 .xlsx / .xls 格式的Excel文件"><span class="error-msg">必填</span>'
+  + '<span style="font-size:11px;color:#9ca3af;display:block;margin-top:4px;">仅支持Excel格式 · 单文件 ≤ 5MB · 最多500条记录</span></div></div>'
+  + '<div class="form-section"><div class="form-section-title">导入规则说明</div>'
+  + '<div class="info-grid">'
+  + '<div class="info-item"><div class="info-label">身份证号</div><div class="info-value" style="font-size:12px;">18位有效格式，重复导入自动跳过并提示</div></div>'
+  + '<div class="info-item"><div class="info-label">手机号</div><div class="info-value" style="font-size:12px;">11位有效号码，作为短信通知唯一凭证</div></div>'
+  + '<div class="info-item"><div class="info-label">试用期(月)</div><div class="info-value" style="font-size:12px;">1-6，超出范围整行报错</div></div>'
+  + '<div class="info-item"><div class="info-label">入职日期</div><div class="info-value" style="font-size:12px;">不早于今日-30天，不晚于今日+90天</div></div>'
+  + '<div class="info-item"><div class="info-label">部门/岗位</div><div class="info-value" style="font-size:12px;">须与系统部门树/岗位库编码完全一致</div></div>'
+  + '<div class="info-item"><div class="info-label">错误处理</div><div class="info-value" style="font-size:12px;">逐行校验，合法行正常入库，错误行导出错误报告</div></div>'
+  + '</div></div>'
+  + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" type="button" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" type="button" onclick="submitBatchImport()">开始导入</button></div></form>';
+  openModal(html, true);
+}
+function submitBatchImport() {
+  if(!validateForm(document.getElementById('batchImportEl'))) return;
+  confirmAction('⏳', '确认开始导入？', '系统将逐行校验数据：合法记录入库为「待办理」，错误行将生成错误报告供下载。', '开始导入', false, function(){
+    showToast('导入完成：成功 486 条，跳过重复 9 条，失败 5 条（错误报告已生成）');
+    setTimeout(function(){ showToast('错误报告已导出：batch_error_20260820.xlsx', 'error'); }, 1200);
+    closeModal();
+  });
 }
 
 // ---- 入职管理操作按钮交互 ----
@@ -1173,9 +1265,9 @@ function openRegularForm() {
   + '<div class="form-group"><label>试用期到期日</label><input disabled value="2025-07-15"></div>'
   + '<div class="form-group"><label><span class="req">*</span> 转正日期</label><input data-required type="date"><span class="error-msg">必填</span></div>'
   + '</div>'
-  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 工作总结 <span style="color:#9ca3af;font-size:11px;">(不少于200字)</span></label><textarea data-required rows="6" placeholder="请详细描述试用期内的工作内容、成果及收获（不少于200字）"></textarea><span class="error-msg">必填</span></div>'
+  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 工作总结 <span style="color:#9ca3af;font-size:11px;">(不少于200字)</span></label><textarea data-required data-label="工作总结" data-minlength="200" rows="6" placeholder="请详细描述试用期内的工作内容、成果及收获（不少于200字）"></textarea><span class="error-msg">必填</span></div>'
   + '<div class="form-grid" style="margin-top:12px">'
-  + '<div class="form-group"><label><span class="req">*</span> 自评分 (1-100)</label><input data-required type="number" min="1" max="100" placeholder="1-100"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 自评分 (1-100)</label><input data-required data-label="自评分" data-min="1" data-max="100" type="number" placeholder="1-100"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label>附件</label><input type="file"></div>'
   + '</div>'
   + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'regularFormEl\'))){showToast(\'转正申请已提交\');closeModal();}">提交</button></div></form>';
@@ -1184,11 +1276,11 @@ function openRegularForm() {
 function openRegularEval() {
   var html = '<div class="modal-title">上级考核评估</div><form id="evalFormEl" onsubmit="return false">'
   + '<div class="form-grid">'
-  + '<div class="form-group"><label><span class="req">*</span> 工作表现 (1-100)</label><input data-required type="number" min="1" max="100"><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label><span class="req">*</span> 价值观符合度 (1-100)</label><input data-required type="number" min="1" max="100"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 工作表现 (1-100)</label><input data-required data-label="工作表现" data-min="1" data-max="100" type="number"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 价值观符合度 (1-100)</label><input data-required data-label="价值观符合度" data-min="1" data-max="100" type="number"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 是否建议转正</label><select data-required><option value="">请选择</option><option>建议转正</option><option>建议延长</option><option>不建议</option></select><span class="error-msg">必填</span></div>'
   + '</div>'
-  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 评语 <span style="color:#9ca3af;font-size:11px;">(不少于100字)</span></label><textarea data-required rows="5" placeholder="请输入考核评语（不少于100字）"></textarea><span class="error-msg">必填</span></div>'
+  + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 评语 <span style="color:#9ca3af;font-size:11px;">(不少于100字)</span></label><textarea data-required data-label="评语" data-minlength="100" rows="5" placeholder="请输入考核评语（不少于100字）"></textarea><span class="error-msg">必填</span></div>'
   + '<div class="form-group" style="margin-top:12px"><label>附件</label><input type="file"></div>'
   + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()" style="margin-right:8px;">取消</button><button class="btn-primary" onclick="if(validateForm(document.getElementById(\'evalFormEl\'))){showToast(\'考核评估已提交\');closeModal();}">提交</button></div></form>';
   openModal(html);
@@ -1357,12 +1449,12 @@ function openRewardForm() {
   + '<div class="form-group"><label><span class="req">*</span> 员工</label><select data-required><option value="">请选择</option>'+NAMES.map(function(n){return '<option>'+n+'</option>';}).join('')+'</select><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 奖惩类型</label><select data-required><option value="">请选择</option><option>奖励</option><option>惩罚</option></select><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 等级</label><select data-required><option value="">请选择</option>'+REWARD_LEVELS.map(function(l){return '<option>'+l+'</option>';}).join('')+'</select><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label><span class="req">*</span> 奖惩主题</label><input data-required placeholder="请输入主题"><span class="error-msg">必填</span></div>'
-  + '<div class="form-group"><label>金额</label><input type="number" placeholder="选填"></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 奖惩主题</label><input data-required data-label="奖惩主题" data-maxlength="30" placeholder="简要标题，最多30字"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label>金额(元)</label><input type="number" data-label="金额" data-min="0" data-max="100000" placeholder="0为无金额，上限10万"><span class="error-msg" style="display:none"></span><span style="font-size:11px;color:#9ca3af;">0表示无金额奖惩</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 生效日期</label><input data-required type="date"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 批准人</label><select data-required><option value="">请选择</option>'+NAMES.slice(0,5).map(function(n){return '<option>'+n+'</option>';}).join('')+'</select><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label>关联绩效</label><select id="perfLinkSelect" onchange="togglePerfImpact()"><option>否</option><option>是</option></select></div>'
-  + '<div class="form-group" id="perfImpactGroup" style="display:none"><label>绩效影响分值</label><input type="number" placeholder="如 +5 或 -3"></div>'
+  + '<div class="form-group" id="perfImpactGroup" style="display:none"><label>绩效影响分值<span class="req" id="perfImpactReq" style="display:none">*</span></label><input type="number" id="perfImpactInput" data-label="绩效影响分值" data-min="-100" data-max="100" placeholder="-100 ~ +100，如 +5 或 -3"><span class="error-msg" style="display:none"></span><span style="font-size:11px;color:#9ca3af;">正数加分 / 负数减分</span></div>'
   + '</div>'
   + '<div class="form-group" style="margin-top:12px"><label><span class="req">*</span> 详细原因</label><textarea data-required rows="4" placeholder="请详细描述奖惩原因"></textarea><span class="error-msg">必填</span></div>'
   + '<div class="form-group" style="margin-top:12px"><label>红头文件附件</label><input type="file"></div>'
@@ -1372,7 +1464,17 @@ function openRewardForm() {
 function togglePerfImpact() {
   var sel = document.getElementById('perfLinkSelect');
   var grp = document.getElementById('perfImpactGroup');
-  if(sel && grp) grp.style.display = sel.value==='是'?'flex':'none';
+  var req = document.getElementById('perfImpactReq');
+  var input = document.getElementById('perfImpactInput');
+  var isYes = sel && sel.value==='是';
+  if(grp) grp.style.display = isYes?'flex':'none';
+  // 关联绩效=是 时，绩效影响分值变为条件必填
+  if(req) req.style.display = isYes?'inline':'none';
+  if(input) {
+    if(isYes) input.setAttribute('data-required',''); 
+    else input.removeAttribute('data-required');
+    if(!isYes) { input.value=''; input.classList.remove('error'); }
+  }
 }
 
 // ---- 7. 标签管理 ----
@@ -1394,7 +1496,7 @@ function renderTag() {
 function openTagForm() {
   var html = '<div class="modal-title">新建标签</div><form id="tagFormEl" onsubmit="return false">'
   + '<div class="form-grid-2">'
-  + '<div class="form-group"><label><span class="req">*</span> 标签名称</label><input data-required placeholder="请输入标签名称"><span class="error-msg">必填</span></div>'
+  + '<div class="form-group"><label><span class="req">*</span> 标签名称</label><input data-required data-label="标签名称" data-minlength="2" data-maxlength="20" placeholder="2-20个字符，同类型内不可重名"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 标签类型</label><select data-required><option value="">请选择</option>'+TAG_TYPES.map(function(t){return '<option>'+t+'</option>';}).join('')+'</select><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 颜色</label><input data-required type="color" value="#3b82f6" style="height:36px;padding:2px;"><span class="error-msg">必填</span></div>'
   + '<div class="form-group"><label><span class="req">*</span> 打标方式</label><select data-required><option value="">请选择</option><option>手动</option><option>规则</option></select><span class="error-msg">必填</span></div>'
@@ -3784,6 +3886,50 @@ function initTrainSurveyCharts() {
 }
 
 // ============ PRD NOTES ============
+// 各模块「数据边界/特殊值」批注（蓝色卡片，追加在各模块批注末尾）
+var BOUNDARY_NOTES = {
+  onboard: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 姓名：2-20字符<br>• 身份证号：18位（含校验位），第17位奇=男/偶=女，第7-14位为出生日期<br>• 手机号：11位，1[3-9]开头<br>• 银行账号：12-19位数字<br>• 学历记录：最多<span class="highlight">4条</span>（第一至第三学历+最新学历）<br>• 工作经历：最多10条，超出走简历附件<br>• 试用期：1-6个月，法定上限6个月<br>• 附件：JPG/PNG/PDF，单文件≤10MB<br>• 填写链接Token：<span class="highlight">72小时</span>有效，一次性使用<br>• 批量导入：单次≤500条，文件≤5MB，仅xlsx/xls<br>• 入职日期范围：今日-30天 ~ 今日+90天<br>• 分页：默认20条/页，可切换50/100</div>',
+  regular: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 自评分/工作表现/价值观符合度：均为1-100整数，边界值1和100均合法<br>• 工作总结：≥200字<br>• 上级评语：≥100字<br>• 试用期延长：最多延长<span class="highlight">1次</span>，每次≤3个月，延长后总试用期≤<span class="highlight">6个月</span><br>• 转正日期 = 入职日期 + 试用期月数，HR可修改但不得早于入职日期<br>• 司龄：保留1位小数，以「年」为单位实时滚动</div>',
+  transfer: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 调动类型枚举：平调/晋升/降职/跨事业部调动，共4种<br>• 生效日期：不得早于审批通过日当天<br>• 新部门≠原部门（同部门同岗位调动系统拦截）<br>• 跨城市调动触发考勤地址与社保缴纳地变更<br>• 薪资变动：新薪资方案须填写完整五项（结构/月总/基本/绩效/岗位）<br>• 调动历史：永久保留，支持任意时间点回溯</div>',
+  renew: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 续签年限枚举：1/2/3/5年、无固定期限<br>• 新合同开始日：默认 = 原合同到期日+1天，可修改但不得早于原到期日<br>• 续签次数：<span class="highlight">连续签满2次</span>固定期限，第3次系统提示可协商无固定期限<br>• 合同到期预警：30/15/7天+到期当天共四级<br>• 新合同到期日：自动 = 开始日+续签年限（无固定期限则置空）<br>• 不续签：自动触发离职流程，不可逆</div>',
+  resign: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 最后工作日：不得早于申请日+30天（主动离职法定预告期）<br>• 离职生效时刻：<span class="highlight">最后工作日23:59:59</span>精确到秒<br>• 交接清单：5大类（项目/文件/账号/实物/财务），须逐项双方确认<br>• 离职原因多选：6个枚举值+其他<br>• 数据保留：离职员工数据只读保留<span class="highlight">≥5年</span>（劳动法要求），不可删除<br>• 账号停用不删除，历史档案/考勤/薪酬/绩效全部冻结只读</div>',
+  reward: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 金额：0-100,000元，<span class="highlight">0表示无金额奖惩</span>（如通报表扬）<br>• 奖惩主题：≤30字<br>• 等级枚举：公司级/事业部级/部门级<br>• 绩效影响分值：-100 ~ +100，正数加分/负数减分；<span class="highlight">关联绩效=是时条件必填</span><br>• 红头文件：公司级/事业部级必传（PDF/JPG）<br>• 生效日期后绩效分数自动联动更新，操作不可逆需二次确认</div>',
+  tag: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 标签名称：2-20字符，同类型内<span class="highlight">不可重名</span><br>• 标签类型：5类固定 + 自定义扩展<br>• 颜色：支持16进制自定义（默认蓝#3b82f6）<br>• 规则打标：学历=985/211/一本 → 自动打标，<span class="highlight">规则实时生效</span>，新增学历自动补打<br>• 单员工标签数：无上限，但看板筛选最多<span class="highlight">组合3个</span>标签<br>• 删除标签：需先解除全部员工绑定，否则拦截</div>',
+  employee: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 档案Tab：13个，不可增删<br>• 脱敏规则：身份证/手机号前3后4，银行卡仅后4位，薪酬非薪酬角色显示***<br>• 变更日志：记录修改人/时间/字段/前后值，<span class="highlight">永久保留不可删改</span><br>• 版本对比：支持任意两个时间点快照差异对比<br>• 企业邮箱：默认 系统账户@richinfo.cn，可修改<br>• 基本工资：固定3000元，不可编辑<br>• 司龄：1位小数，实时滚动计算<br>• 离职员工档案：全部字段转只读</div>',
+  att_punch: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 打卡时间：精确到秒，跨天班次归起始日统计<br>• 打卡来源枚举：考勤机/App/GPS外勤/补卡<br>• 定位打卡：有效半径<span class="highlight">500米</span>，超出标记外勤<br>• 原始打卡数据：<span class="highlight">不可修改不可删除</span>，修正走数据修正流程留痕<br>• 单日打卡次数：无上限，取班次时间窗内最近的有效记录<br>• 手动拉取频率：≤1次/分钟，防止接口滥用</div>',
+  att_shift: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 班次时长：1-24小时，跨天班次支持（如下22:00-次日06:00）<br>• 弹性时间：0-120分钟<br>• 迟到判定：晚于规定时间+弹性范围<br>• 午休扣时：0-120分钟，从工时中扣除<br>• 班次编码：唯一，删除前须解除全部部门绑定<br>• 同一员工同一时段只能绑定一个班次</div>',
+  att_special: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 特殊人群组：高管/销售外勤/驻场/孕期等<br>• 孕期特殊考勤：可凭证明免迟到早退打卡，有效期最长<span class="highlight">280天</span><br>• 高管组：可配置免打卡，但出差/请假仍需申请<br>• 销售外勤：GPS打卡半径可放宽至<span class="highlight">5公里</span>，或完全按拜访记录认定<br>• 特殊规则优先级：高于普通班次规则</div>',
+  att_apply: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 请假：最小单位0.5天，超出余额系统拦截<br>• 出差：需填写地点/事由/交通方式，预计费用≥0元<br>• 加班：区分工作日/休息日/节假日（影响加班费倍率1.5/2/3倍）<br>• 补卡：每月最多<span class="highlight">3次</span>，超次需部门负责人特批<br>• 外勤：不计迟到早退，但须当日提交<br>• 请假>3天：审批升级至部门负责人<br>• 加班：原则上须提前申请，特殊情况可事后24小时内补</div>',
+  att_leave: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 假期类型：12种（法定假10种+福利假3种）<br>• 年假天数（按司龄）：<1年=5天 / 1-10年=7天 / 10-20年=10天 / ≥20年=15天<br>• 年假刷新：每年1月1日，未休完可结转至<span class="highlight">次年3月底</span><br>• 病假：需上传证明，单次>30天转为长病假管理<br>• 婚假/产假/陪产假：按地方规定，天数从领取证明之日起锁定<br>• 剩余天数≤2天：状态自动标「即将到期」红色提示<br>• 假期余额：不出现负值，扣减前校验</div>',
+  att_daily: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 考勤状态枚举：正常/迟到/早退/旷工/请假/出差/加班/外勤<br>• 旷工判定：全天无打卡且无请假/出差审批记录<br>• 迟到/早退分钟数：精确到分钟，<span class="highlight">1-59分钟</span>按实际计，≥60分钟按半天旷工<br>• 工时计算：扣除午休后四舍五入到0.5小时<br>• 数据状态：系统计算/已修正，修正记录永久留痕<br>• 查询范围：单次最长<span class="highlight">31天</span></div>',
+  att_summary: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 统计周期：自然月，支持跨年查询<br>• 出勤率 = 实际出勤天数 ÷ 应出勤天数 × 100%，保留2位小数<br>• 锁定后：当月数据任何模块不可再变更，解锁需HR管理员审批<br>• 月度汇总与每日明细双向校验，差异项标红<br>• 导出Excel：单次最多<span class="highlight">1万行</span></div>',
+  att_correct: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 修正权限：仅HR专员及以上<br>• 修正原因：必填，≤200字<br>• 修正时限：数据锁定后不可修正，须先解锁<br>• 修正前后值均永久保留，支持审计追溯<br>• 同一字段同一月份最多修正<span class="highlight">2次</span>，超次升级审批</div>',
+  att_audit: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 日志类型：操作/变更/接口/安全/法大大交互，共5类<br>• 保留期限：操作日志≥3年，变更日志<span class="highlight">永久</span>，接口日志≥6个月，安全日志≥3年，法大大交互日志≥5年<br>• 日志内容：<span class="highlight">不可删改</span>（审计合规要求）<br>• 查询导出：仅HR管理员权限</div>',
+  perf_indicator: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 指标权重：同一考核计划下各指标权重之和必须<span class="highlight">=100%</span><br>• 指标分值：0-100<br>• 指标编码：全局唯一，删除须先解除全部计划关联<br>• 数据来源枚举：系统自动/手动录入/360评估<br>• 计算口径：须填写明确公式，不允许为空</div>',
+  perf_plan: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 考核周期：月度/季度/半年/年度，起始日不得晚于结束日<br>• 考核对象：支持按部门/标签/花名册圈选，单计划<span class="highlight">≤5000人</span><br>• 计划状态：草稿→已发布→进行中→已结束，发布后对象名单锁定<br>• 同一周期同一对象只能属于一个考核计划<br>• 强制分布比例：优秀≤20%，不合格≥5%（可配置）</div>',
+  perf_myassess: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 自评截止：考核期结束后<span class="highlight">5个工作日</span>，逾期锁定为0分<br>• 自评分：1-100整数<br>• 工作总结：≥200字<br>• 附件：≤5个，单个≤10MB<br>• 提交后不可修改，需联系HR退回</div>',
+  perf_evaluate: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 评价截止：自评提交后<span class="highlight">5个工作日</span><br>• 各维度评分：1-100整数<br>• 评语：≥100字<br>• 跨级评价（上上级）仅在晋升场景触发<br>• 一名评价人单计划待评任务≤50人，超出自动分流</div>',
+  perf_result: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 综合得分 = Σ(指标得分×权重)，四舍五入保留1位小数<br>• 强制分布：优秀≤20% / 良好≤40% / 合格 / 不合格≥5%<br>• 等级边界：90分以上=优秀（含90），<span class="highlight">边界值含在上一档</span><br>• 申诉窗口：结果公布后<span class="highlight">3个工作日</span>内<br>• 结果锁定：申诉期结束后锁定，同步薪酬模块</div>',
+  perf_comment: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 综合评语：≥50字，≤1000字<br>• 评语来源：自评+上级+跨级三方汇总<br>• 匿名评语：不展示评价人姓名<br>• HR确认后归档，不可修改</div>',
+  pay_structure: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 基本工资：<span class="highlight">固定3000元</span>（全司统一，不可配置）<br>• 绩效工资 = 月总×30%（可调整）<br>• 岗位工资 = (月总-基本-绩效)×30%，负数取<span class="highlight">0</span><br>• 服务补贴 = (月总-基本-绩效)×70%，负数取0<br>• 五项公式联动：任一项调整须重新校验合计=月总<br>• 薪资组：同组共享薪资结构，单人仅可属于一个组</div>',
+  pay_entry: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 月总工资：>0，≤1,000,000元<br>• 调薪幅度单次≤50%，超出需HRD+CEO双审批<br>• 批量导入：单次≤1000条<br>• 生效月份：仅可选当月或次月，不可追溯历史月份<br>• 变动留痕：新旧值均记录</div>',
+  pay_adjust: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 调薪幅度：-100%~+100%，降薪需员工本人确认<br>• 普调 vs 个调：普调批量生效，个调走审批流<br>• 生效日：仅可选每月1日<br>• 同一员工90天内仅允许<span class="highlight">1次</span>个调<br>• 试用期转正调薪：自动触发，不占个调次数</div>',
+  pay_other: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 奖金：>0，年终奖单独模块核算<br>• 扣款：≥0且≤当月应发工资的<span class="highlight">20%</span>（劳动法月扣款上限）<br>• 补偿金：N/N+1按司龄自动计算，司龄每满半年按0.5取整<br>• 年金/补贴：按天折算，入职/离职当月按实际在职天数</div>',
+  pay_insurance: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 社保基数：当地社平工资60%~<span class="highlight">300%</span>区间，超出自动截断并提示<br>• 公积金比例：5%-12%<br>• 增员：入职当月/次月可选，操作截止每月<span class="highlight">15日</span><br>• 减员：离职当月停缴，次月生效<br>• 基数调整：每年7月统一申报，一年一次</div>',
+  pay_calc: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 计薪天数：21.75天/月（法定折算标准）<br>• 事假扣款 = 月薪÷21.75×请假天数<br>• 病假工资：≥当地最低工资的<span class="highlight">80%</span><br>• 加班费基数：按基本工资计算（1.5/2/3倍）<br>• 核算容差：分项合计与总额差值≤<span class="highlight">0.01元</span>，超出标红拦截<br>• 重算：解锁后重算覆盖原值，保留历史版本</div>',
+  pay_dispatch: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 发放日：默认每月<span class="highlight">10日</span>（遇节假日提前至最近工作日）<br>• 报盘格式：银行标准报盘文件，单文件≤5000条<br>• 发放失败：3次重试后转人工处理，失败明细可导出<br>• 发放批次：一旦确认不可撤销，错误通过次月补差修正<br>• 实发工资：≥0，出现负数系统拦截（需先补扣款）</div>',
+  pay_tax: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 累计预扣法：按年累计计算，税率跳档自动提示<br>• 起征点：5000元/月<br>• 专项附加扣除：子女教育/赡养老人/房贷利息/房租/继续教育/婴幼儿照护，共6项<br>• 年终奖：可选单独计税或并入综合所得，<span class="highlight">一年仅可切换一次</span><br>• 汇算清缴：每年3-6月，多退少补<br>• 税额计算：精确到分，四舍五入</div>',
+  dash_overview: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 离职率 = 离职人数÷平均在职人数×100%，保留1位小数<br>• 数据延迟：实时数据延迟≤<span class="highlight">24小时</span><br>• 统计范围：在职+试用期，离职员工计入历史口径<br>• 环比异常波动＞30%自动标红预警</div>',
+  dash_hex_eval: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 六个维度均0-100分，雷达图展示<br>• 综合分 = 六维加权平均，权重可配置（默认等权）<br>• 维度得分&lt;60标红预警<br>• 对比口径：支持与上季度/去年同期对比</div>',
+  dash_hex: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 九个维度均0-100分<br>• 健康度分 = 九维加权平均，≥80绿 / 60-80黄 / &lt;60红<br>• 数据来源：人事/考勤/绩效/薪酬四模块自动汇聚，T+1更新<br>• 组织下钻：支持事业部→部门→科室三级下钻</div>',
+  train_instructor: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 讲师评级：初级/中级/高级/金牌，4级<br>• 课酬标准：按级别200-2000元/课时<br>• 讲师评分：学员评价加权平均，1-5分制，保留1位小数<br>• 评分&lt;3.0分：暂停排课资格，复评后恢复<br>• 认证有效期：2年，到期前60天提醒复审</div>',
+  train_course: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 课程时长：0.5-8小时<br>• 课件格式：PDF/PPT/MP4，单个≤500MB<br>• 课程编码：唯一，删除前须下架全部排期<br>• 课程状态：草稿→上架→下架，下架后历史学习记录保留<br>• 必修/选修：必修课程未完成影响绩效「学习成长」维度</div>',
+  train_schedule: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 排期冲突：同一讲师/教室/学员时段重叠系统拦截<br>• 单场人数：≤教室容量（虚拟教室≤500人）<br>• 报名截止：开课前1天<br>• 签到方式：扫码/口令/人脸，开课后<span class="highlight">15分钟</span>内有效<br>• 取消排期：开课前24小时外无痕取消，24小时内须通知全部学员</div>',
+  train_record: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 签到率 = 实际签到÷应签到×100%，<span class="highlight">&lt;80%</span>标记未达标<br>• 学习进度：0-100%，进度100%+考试合格→自动「已完成」<br>• 学时：0.5小时为最小单位<br>• 数据同步延迟：≤24小时<br>• 记录留痕：不可删改，仅可补录（需审批）</div>',
+  train_exam: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 及格线：默认<span class="highlight">60分</span>（可按课程配置40-90）<br>• 成绩：0-100，保留整数<br>• 补考：最多<span class="highlight">2次</span>，取最高分<br>• 考试时长：30-180分钟<br>• 题库：单课程题目≥10道才允许开考<br>• 证书有效期：默认3年，到期前30天提醒</div>',
+  train_survey: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 评分：1-5分制，综合得分保留1位小数<br>• 回收率：<span class="highlight">&lt;50%</span>触发催填通知<br>• 综合评分&lt;3.0分：触发培训质量预警<br>• 匿名填写：不记录填写人，问卷截止后<span class="highlight">7天</span>（可调）<br>• NPS推荐意愿：0-10分，9-10为推荐者</div>'
+};
+
 function renderPrd() {
   var c = document.getElementById('prdContent');
   var prdData = {
@@ -4024,7 +4170,7 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">业务规则</div>• 培训完成后自动发放调查问卷（可配置延迟天数）<br>• 截止时间为培训结束后7天（可调整）<br>• 回收率低于50% → 发送催填通知<br>• 综合评分低于3.0分 → 触发培训质量预警<br>• 匿名填写，不记录填写人</div>'
     + '<div class="prd-note"><div class="prd-note-title">统计报告</div>• 满意度雷达图：展示各维度评分<br>• 满意度趋势折线图：按月/季度追踪<br>• 讲师评分排行<br>• 课程评分排行<br>• 改进建议词云/汇总</div>',
   };
-  c.innerHTML = prdData[currentModule] || '';
+  c.innerHTML = (prdData[currentModule] || '') + (BOUNDARY_NOTES[currentModule] || '');
 }
 
 // ============ INIT ============
