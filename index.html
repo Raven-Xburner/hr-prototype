@@ -37,7 +37,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .filter-item { display: flex; flex-direction: column; gap: 4px; }
 .filter-item label { font-size: 12px; color: #6b7280; }
 .filter-item input, .filter-item select { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; min-width: 140px; }
-.table-container { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.table-container { background: #fff; border-radius: 8px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.topbar { position: sticky; top: 0; z-index: 90; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,.95); backdrop-filter: blur(6px); padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.breadcrumb { font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 6px; }
+.breadcrumb .crumb-home { color: #94a3b8; }
+.breadcrumb .crumb-sep { color: #cbd5e1; }
+.breadcrumb .crumb-group { color: #6b7280; }
+.breadcrumb .crumb-cur { color: #1e293b; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-date { font-size: 13px; color: #6b7280; }
+.user-chip { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1e293b; font-weight: 500; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: #3b82f6; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.page-title-wrap { display: flex; flex-direction: column; gap: 2px; }
+.page-sub { font-size: 13px; color: #6b7280; font-weight: 400; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead { background: #f8fafc; }
 th { padding: 12px 14px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
@@ -106,8 +118,7 @@ tr:hover { background: #f8fafc; }
 .op-link { color: #3b82f6; cursor: pointer; font-size: 12px; margin-right: 8px; }
 .op-link:hover { text-decoration: underline; }
 .op-link.danger { color: #ef4444; }
-.op-link.disabled { color: #c0c4cc; cursor: not-allowed; pointer-events: none; }
-.op-link.danger.disabled { color: #d4a0a0; }
+.op-link.disabled { display: none; }
 .confirm-box { text-align: center; padding: 20px 0; }
 .confirm-box .confirm-icon { font-size: 40px; margin-bottom: 12px; }
 .confirm-box .confirm-msg { font-size: 15px; color: #374151; margin-bottom: 8px; line-height: 1.6; }
@@ -175,6 +186,13 @@ tr:hover { background: #f8fafc; }
 
 <!-- Main Content -->
 <div class="main-content" id="mainContent">
+  <div class="topbar">
+    <div class="breadcrumb" id="topbarCrumb"></div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topbarDate"></span>
+      <div class="user-chip"><span class="user-avatar">HR</span>HR管理员</div>
+    </div>
+  </div>
   <div id="pageContainer"></div>
 </div>
 
@@ -497,11 +515,11 @@ var NAV_GROUPS = [
     { key:'att_shift', name:'班次管理', icon:'🕐' },
     { key:'att_special', name:'特殊人群', icon:'👥' },
     { key:'att_apply', name:'请假/出差/加班', icon:'📝' },
-    { key:'att_leave', name:'假期管理', icon:'️' },
+    { key:'att_leave', name:'假期管理', icon:'🏖️' },
     { key:'att_daily', name:'考勤明细', icon:'📋' },
     { key:'att_summary', name:'考勤统计', icon:'📊' },
     { key:'att_correct', name:'数据修正', icon:'✏️' },
-    { key:'att_audit', name:'审计日志', icon:'' }
+    { key:'att_audit', name:'审计日志', icon:'🔍' }
   ]},
   { name:'绩效管理', icon:'📊', collapsed:false, modules:[
     { key:'perf_indicator', name:'指标备案', icon:'📋' },
@@ -562,9 +580,92 @@ function toggleNavGroup(gi) {
 
 function switchPage(key) {
   currentModule = key;
+  // 手风琴：自动展开当前模块所在分组，收起其他分组
+  NAV_GROUPS.forEach(function(g) { g.collapsed = !g.modules.some(function(m) { return m.key === key; }); });
   renderNav();
   renderPage();
   renderPrd();
+  renderTopbar();
+}
+
+// ============ TOPBAR（面包屑 + 用户信息） ============
+function renderTopbar() {
+  var group = null, mod = null;
+  NAV_GROUPS.forEach(function(g) {
+    g.modules.forEach(function(m) { if(m.key === currentModule) { group = g; mod = m; } });
+  });
+  var crumb = document.getElementById('topbarCrumb');
+  if(crumb && group && mod) {
+    crumb.innerHTML = '<span class="crumb-home">HR人事管理系统</span><span class="crumb-sep">/</span>'
+      + '<span class="crumb-group">'+group.name+'</span><span class="crumb-sep">/</span>'
+      + '<span class="crumb-cur">'+mod.name+'</span>';
+  }
+  var d = document.getElementById('topbarDate');
+  if(d) {
+    var now = new Date();
+    var weeks = ['日','一','二','三','四','五','六'];
+    d.textContent = now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 星期'+weeks[now.getDay()];
+  }
+}
+
+// ============ 模块功能说明（页面副标题） ============
+var MODULE_DESC = {
+  onboard: '待入职全流程管理：OA自动建档 → 员工在线填写 → 法大大电子签 → 审核归档 → 自动创建账号',
+  regular: '试用期转正全流程：到期自动预警、员工申请、上级评估、OA审批、薪资联动生效',
+  transfer: '员工部门/岗位调动管理：多级审批，生效后自动更新档案组织与岗位信息，历史可追溯',
+  renew: '合同到期预警与续签管理：到期前30天预警，法大大电子签，续签次数自动统计',
+  resign: '离职全流程管理：OA审批驱动、工作交接、离职面谈、账号停用与数据只读归档',
+  reward: '员工奖惩记录管理：分级审批、红头文件管理、绩效分数自动联动',
+  tag: '人才标签管理：手动/规则双模式打标，标签回流员工档案，支撑人才看板组合筛选',
+  employee: '员工全生命周期档案：13个Tab页展示、版本控制、敏感字段脱敏、RBAC权限控制',
+  att_punch: '对接考勤机/打卡App的原始打卡数据，展示打卡来源、时间与异常状态',
+  att_shift: '班次规则配置：固定班/弹性班/排班制，支持跨天班次与休息规则设置',
+  att_special: '特殊考勤人群管理：高管、销售外勤、驻场人员等适用特殊考勤规则',
+  att_apply: '请假/出差/加班/补卡/外勤五类申请统一管理，审批通过后自动联动考勤结果',
+  att_leave: '假期综合管理：假期记录查询、12种假期类型配置、假期申请审批三大功能区',
+  att_daily: '每日考勤明细：基于打卡数据与班次规则自动计算每位员工每天的考勤状态',
+  att_summary: '月度考勤统计汇总：出勤天数、迟到早退、请假加班汇总，支持批量确认锁定',
+  att_correct: '考勤数据人工修正记录：修正留痕、原因备注、审批流程完整可追溯',
+  att_audit: '考勤操作审计日志：打卡、修正、锁定等所有操作记录可追溯',
+  perf_indicator: '考核指标备案管理：指标库维护、权重配置、数据来源与计算口径确认',
+  perf_plan: '考核计划管理：计划创建、考核对象圈选、指标关联、考核周期配置',
+  perf_myassess: '员工自评入口：查看考核任务、填写自评分数与工作总结',
+  perf_evaluate: '上级评价管理：待评任务提醒、评分录入、评语填写与提交',
+  perf_result: '考核结果管理：结果查询、强制分布校验、申诉处理',
+  perf_comment: '综合评语管理：多维度评语汇总、HR审核确认',
+  pay_structure: '薪资结构与薪资组配置：薪资项目管理、计算公式配置、适用人群圈选',
+  pay_entry: '薪资数据录入：固定薪资、变动项录入与批量导入',
+  pay_adjust: '调薪管理：调薪申请、多级审批流、生效后自动生成薪酬变更记录',
+  pay_other: '奖金/扣款/补贴/补偿金等一次性工资项目的登记与审批',
+  pay_insurance: '社保公积金管理：缴纳基数维护、缴纳地管理、增员减员申报',
+  pay_calc: '工资计算与核算：月度算薪执行、核算校验、异常数据提示',
+  pay_dispatch: '工资发放管理：发放批次创建、银行报盘、发放状态跟踪',
+  pay_tax: '个税管理：累计预扣法计算、专项附加扣除、年度汇算清缴',
+  dash_overview: 'HR综合数据总览：人数、异动、考勤、薪酬等核心指标一屏掌握',
+  dash_hex_eval: '六维人力评估：人效、成本、结构等六个维度的雷达图分析',
+  dash_hex: '九维评估模型：九个维度综合诊断组织健康度',
+  train_instructor: '讲师管理：内部/外部讲师库、资质认证、授课记录与评价',
+  train_course: '课程资源维护：课程库管理、课件上传、课程上下架',
+  train_schedule: '课程安排：排期管理、学员名单、签到与考试要求配置',
+  train_record: '学习记录留痕：学习进度、签到记录、学时统计与完成率追踪',
+  train_exam: '考试成绩登记：题库管理、考试安排、成绩登记与证书发放',
+  train_survey: '满意度调查：问卷自动发放与回收、多维度评分统计与报告生成'
+};
+
+// 为当前页面标题注入功能说明副标题
+function enhancePage() {
+  var h1 = document.querySelector('#pageContainer .page-title');
+  if(!h1 || h1.parentNode.classList.contains('page-title-wrap')) return;
+  var desc = MODULE_DESC[currentModule];
+  if(!desc) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'page-title-wrap';
+  h1.parentNode.insertBefore(wrap, h1);
+  wrap.appendChild(h1);
+  var sub = document.createElement('p');
+  sub.className = 'page-sub';
+  sub.textContent = desc;
+  wrap.appendChild(sub);
 }
 
 // ============ TOAST ============
@@ -702,6 +803,7 @@ function renderPage() {
     case 'train_exam': c.innerHTML = renderTrainExam(); initTrainExamCharts(); break;
     case 'train_survey': c.innerHTML = renderTrainSurvey(); initTrainSurveyCharts(); break;
   }
+  enhancePage();
 }
 
 // ---- 1. 入职管理 ----
@@ -3926,9 +4028,11 @@ function renderPrd() {
 }
 
 // ============ INIT ============
+NAV_GROUPS.forEach(function(g) { g.collapsed = !g.modules.some(function(m) { return m.key === currentModule; }); });
 renderNav();
 renderPage();
 renderPrd();
+renderTopbar();
 </script>
 </body>
 </html>
