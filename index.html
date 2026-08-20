@@ -216,6 +216,7 @@ function genPhone() { return '1'+randInt(30,99)+String(randInt(10000000,99999999
 
 var onboardData=[], regularData=[], transferData=[], renewData=[], resignData=[], rewardData=[], tagData=[], employeeData=[];
 var punchData=[], shiftData=[], leaveData=[], leaveBalanceData=[], dailyAttData=[], summaryData=[], correctionData=[], auditLogData=[], specialGroupData=[];
+var leaveRecordData=[], leaveTypeConfigData=[], leaveApprovalData=[];
 var perfIndicatorData=[], perfPlanData=[], perfAssessData=[];
 
 function initData() {
@@ -316,6 +317,48 @@ function initData() {
   for(i=0;i<15;i++){
     leaveBalanceData.push({ id:i+1, name:rand(NAMES), empNo:'EMP'+String(randInt(1000,9999)), dept:rand(DEPTS), annualTotal:randInt(5,15), annualUsed:randInt(0,8), annualRemain:0, sickTotal:10, sickUsed:randInt(0,5), personalUsed:randInt(0,3), parentalUsed:randInt(0,5), compUsed:randInt(0,4) });
     leaveBalanceData[i].annualRemain = leaveBalanceData[i].annualTotal - leaveBalanceData[i].annualUsed;
+  }
+  // === 假期记录数据 ===
+  var leaveRecordStatuses = ['正常','已用完','即将到期','已冻结','已延期'];
+  var empStatuses = ['在职','试用期','已离职'];
+  var correctStatuses = ['正常','已修正','待修正'];
+  for(i=0;i<50;i++){
+    var lrTotal = randInt(3,15);
+    var lrUsed = randInt(0, lrTotal);
+    var lrRemain = lrTotal - lrUsed;
+    var lrStatus = lrRemain===0?'已用完':lrRemain<=2?'即将到期':rand(leaveRecordStatuses);
+    var lrCorrect = Math.random()>0.85?'已修正':Math.random()>0.9?'待修正':'正常';
+    leaveRecordData.push({ id:i+1, empNo:'CX'+String(randInt(10000,99999)), name:rand(NAMES), empStatus:rand(empStatuses), dept:rand(DEPTS), leaveStatus:lrStatus, totalDays:lrTotal, remainDays:lrRemain, entryDate:randDate(2018,2024), effectDate:randDate(2025,2025), expireDate:randDate(2026,2026), correctStatus:lrCorrect, holidayType:'年休假' });
+  }
+  // === 假期类型配置数据(12种) ===
+  var ltConfigs = [
+    { id:1, name:'年休假', code:'ANNUAL', category:'法定假', unit:'天', maxDays:15, minService:'1年', paid:true, carryOver:true, carryOverMonths:3, approvalLevel:'部门负责人', status:'启用', desc:'根据司龄自动核算额度：1年以下5天，1-10年7天，10-20年10天，20年以上15天' },
+    { id:2, name:'病假', code:'SICK', category:'法定假', unit:'天', maxDays:10, minService:'不限', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'直属上级', status:'启用', desc:'需提供医院诊断证明，累计超过10天按事假处理，薪资按80%发放' },
+    { id:3, name:'事假', code:'PERSONAL', category:'法定假', unit:'天', maxDays:5, minService:'不限', paid:false, carryOver:false, carryOverMonths:0, approvalLevel:'部门负责人', status:'启用', desc:'无薪假期，全年累计不超过5天，超出按旷工处理' },
+    { id:4, name:'婚假', code:'MARRIAGE', category:'法定假', unit:'天', maxDays:10, minService:'不限', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'HR总监', status:'启用', desc:'结婚登记后6个月内使用，需提供结婚证复印件，一次性休完' },
+    { id:5, name:'产假', code:'MATERNITY', category:'法定假', unit:'天', maxDays:158, minService:'不限', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'HR总监', status:'启用', desc:'正常分娩98天+难产15天+多胞胎每多1个15天，产前可休15天' },
+    { id:6, name:'陪产假', code:'PATERNITY', category:'法定假', unit:'天', maxDays:15, minService:'不限', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'直属上级', status:'启用', desc:'配偶生育后30天内使用，需提供出生证明，一次性休完' },
+    { id:7, name:'丧假', code:'BEREAVEMENT', category:'法定假', unit:'天', maxDays:5, minService:'不限', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'直属上级', status:'启用', desc:'直系亲属3天，非直系1天，可加路程假' },
+    { id:8, name:'调休假', code:'COMP', category:'福利假', unit:'天', maxDays:10, minService:'不限', paid:true, carryOver:true, carryOverMonths:6, approvalLevel:'直属上级', status:'启用', desc:'由加班转换而来，1天加班=1天调休，有效期6个月' },
+    { id:9, name:'育儿假', code:'PARENTAL', category:'法定假', unit:'天', maxDays:10, minService:'1年', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'部门负责人', status:'启用', desc:'子女3岁以下，父母双方各享每年10天育儿假' },
+    { id:10, name:'工伤假', code:'INJURY', category:'法定假', unit:'天', maxDays:365, minService:'不限', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'HR总监', status:'启用', desc:'需工伤认定书，停工留薪期一般不超过12个月' },
+    { id:11, name:'年假福利假', code:'WELFARE', category:'福利假', unit:'天', maxDays:3, minService:'2年', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'直属上级', status:'启用', desc:'公司额外福利假，司龄满2年可享，用于个人事务处理' },
+    { id:12, name:'考试假', code:'EXAM', category:'福利假', unit:'天', maxDays:2, minService:'1年', paid:true, carryOver:false, carryOverMonths:0, approvalLevel:'直属上级', status:'启用', desc:'参加职业资格等考试，凭准考证申请，每年最多2次' }
+  ];
+  leaveTypeConfigData = ltConfigs;
+  // === 假期审批流程数据 ===
+  var approvalTypes = ['年休假','病假','事假','婚假','调休假','育儿假','产假','陪产假'];
+  var approvalStatuses = ['待提交','审批中','已通过','已驳回','已撤销'];
+  var approvalFlows = ['直属上级审批','部门负责人审批','HR总监审批'];
+  for(i=0;i<25;i++){
+    var apType = rand(approvalTypes);
+    var apStatus = rand(approvalStatuses);
+    var apDays = apType==='年休假'?randInt(1,5):apType==='病假'?randInt(1,10):apType==='事假'?randInt(1,3):apType==='婚假'?randInt(5,10):apType==='产假'?randInt(98,158):apType==='陪产假'?randInt(5,15):apType==='调休假'?randInt(1,3):randInt(1,5);
+    var apFlowStep = apStatus==='已通过'?3:apStatus==='已驳回'?2:apStatus==='审批中'?randInt(1,2):apStatus==='已撤销'?0:0;
+    var apApplicant = rand(NAMES);
+    var apApprover1 = rand(NAMES);
+    var apApprover2 = rand(NAMES);
+    leaveApprovalData.push({ id:i+1, applyNo:'LV'+String(randInt(20250001,20259999)), applicant:apApplicant, empNo:'CX'+String(randInt(10000,99999)), dept:rand(DEPTS), leaveType:apType, startDate:randDate(2025,2025), endDate:randDate(2025,2025), days:apDays, reason:rand(['个人事务','身体不适','家庭原因','结婚登记','陪护家人','资格考试','体检复查','子女照顾']), status:apStatus, flowStep:apFlowStep, flowName:apFlowStep>=3?'审批完成':apFlowStep===2?'部门负责人审批中':apFlowStep===1?'直属上级审批中':'待提交', approver1:apApprover1, approver2:apApprover2, submitTime:randDate(2025,2025)+' '+String(randInt(8,18)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), approvalTime:apStatus==='已通过'?randDate(2025,2025)+' '+String(randInt(8,18)).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'):'--' });
   }
   var weekDays = ['周一','周二','周三','周四','周五','周六','周日'];
   var attStatuses = ['正常','正常','正常','正常','正常','迟到','早退','旷工','请假','出差','加班','外勤'];
@@ -1343,6 +1386,7 @@ function renderEmpDetailModal() {
 
 // ============ ATTENDANCE MODULE ============
 var attApplyTab = 'leave';
+var leaveMgmtTab = 'records';
 
 function attStatusBadge(s) {
   if(s==='正常') return 'badge-green';
@@ -1443,12 +1487,233 @@ function renderApplyMgmt() {
 }
 
 function renderLeaveMgmt() {
-  var rows = getPageData(leaveBalanceData, 'attendance');
+  var tabs = ['假期记录','假期类型管理','假期申请审批'];
+  var tabHtml = '<div class="tab-bar">'+tabs.map(function(t){return '<div class="tab-item '+(t===leaveMgmtTab?'active':'')+'" onclick="leaveMgmtTab=\''+t+'\';renderPage()">'+t+'</div>';}).join('')+'</div>';
+  var content = '';
+  if(leaveMgmtTab==='假期记录') content = renderLeaveRecords();
+  else if(leaveMgmtTab==='假期类型管理') content = renderLeaveTypeConfig();
+  else content = renderLeaveApproval();
+  return '<div class="page-header"><h1 class="page-title">假期管理</h1><div style="display:flex;gap:8px;"><button class="btn-primary" onclick="showToast(\'批量初始化中...\')">批量初始化</button><button class="btn-secondary" onclick="showToast(\'导出成功\')">导出</button></div></div>' + tabHtml + content;
+}
+
+function renderLeaveRecords() {
+  var statusBadge = function(s){ return s==='正常'?'badge-green':s==='已用完'?'badge-red':s==='即将到期'?'badge-yellow':s==='已冻结'?'badge-gray':'badge-blue'; };
+  var empBadge = function(s){ return s==='在职'?'badge-green':s==='试用期'?'badge-blue':'badge-gray'; };
+  var correctBadge = function(s){ return s==='正常'?'badge-green':s==='已修正'?'badge-yellow':'badge-red'; };
+  var rows = getPageData(leaveRecordData, 'leaveMgmt');
   var tableRows = rows.map(function(r) {
-    return '<tr><td>'+r.name+'</td><td>'+r.empNo+'</td><td>'+r.dept+'</td><td>'+r.annualTotal+'</td><td>'+r.annualUsed+'</td><td style="color:'+(r.annualRemain<=2?'#ef4444':'#16a34a')+';font-weight:600;">'+r.annualRemain+'</td><td>'+r.sickTotal+'</td><td>'+r.sickUsed+'</td><td>'+r.personalUsed+'</td><td>'+r.parentalUsed+'</td><td>'+r.compUsed+'</td><td><span class="op-link" onclick="showToast(\'调整额度\')">调整</span></td></tr>';
+    var remainStyle = r.remainDays<=2?'color:#ef4444;font-weight:700;':r.remainDays<=5?'color:#f59e0b;font-weight:600;':'color:#16a34a;font-weight:600;';
+    return '<tr>'
+      + '<td>'+r.empNo+'</td>'
+      + '<td>'+r.name+'</td>'
+      + '<td><span class="badge '+empBadge(r.empStatus)+'">'+r.empStatus+'</span></td>'
+      + '<td>'+r.dept+'</td>'
+      + '<td><span class="badge '+statusBadge(r.leaveStatus)+'">'+r.leaveStatus+'</span></td>'
+      + '<td style="font-weight:600;">'+r.totalDays+'天</td>'
+      + '<td style="'+remainStyle+'">'+r.remainDays+'天</td>'
+      + '<td>'+r.entryDate+'</td>'
+      + '<td>'+r.effectDate+'</td>'
+      + '<td>'+r.expireDate+'</td>'
+      + '<td><span class="badge '+correctBadge(r.correctStatus)+'">'+r.correctStatus+'</span></td>'
+      + '<td style="white-space:nowrap;">'
+        + '<button class="btn-sm" style="background:#fff;color:#ef4444;border:1px solid #ef4444;margin-right:4px;" onclick="showToast(\'延期处理：'+r.name+'\')">延期</button>'
+        + '<button class="btn-sm" style="background:#3b82f6;color:#fff;border:none;margin-right:4px;" onclick="showToast(\'修正额度：'+r.name+'\')">修正</button>'
+        + '<span class="op-link" onclick="showLeaveDetailModal('+r.id+')">年假记录</span>'
+      + '</td></tr>';
   }).join('');
-  return '<div class="page-header"><h1 class="page-title">假期余额管理</h1><div style="display:flex;gap:8px;"><button class="btn-primary" onclick="showToast(\'批量初始化中...\')">批量初始化</button><button class="btn-secondary" onclick="showToast(\'导出成功\')">导出</button></div></div>'
-  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>姓名</th><th>工号</th><th>部门</th><th>年休假(应休)</th><th>年休假(已休)</th><th>年休假(剩余)</th><th>病假总额</th><th>病假已用</th><th>事假已用</th><th>育儿假已用</th><th>调休已用</th><th>操作</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', leaveBalanceData.length)+'</div>';
+  var statHtml = '<div class="stat-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px;">'
+    + '<div class="stat-card"><div class="stat-label">总人数</div><div class="stat-value">'+leaveRecordData.length+'</div><div class="stat-sub">在职员工</div></div>'
+    + '<div class="stat-card"><div class="stat-label">年假正常</div><div class="stat-value" style="color:#16a34a;">'+leaveRecordData.filter(function(r){return r.leaveStatus==='正常';}).length+'</div><div class="stat-sub">额度充足</div></div>'
+    + '<div class="stat-card"><div class="stat-label">即将到期</div><div class="stat-value" style="color:#f59e0b;">'+leaveRecordData.filter(function(r){return r.leaveStatus==='即将到期';}).length+'</div><div class="stat-sub">剩余≤2天</div></div>'
+    + '<div class="stat-card"><div class="stat-label">已用完</div><div class="stat-value" style="color:#ef4444;">'+leaveRecordData.filter(function(r){return r.leaveStatus==='已用完';}).length+'</div><div class="stat-sub">需关注</div></div>'
+    + '<div class="stat-card"><div class="stat-label">已修正</div><div class="stat-value" style="color:#6b7280;">'+leaveRecordData.filter(function(r){return r.correctStatus==='已修正';}).length+'</div><div class="stat-sub">人工调整</div></div>'
+    + '</div>';
+  var filterHtml = '<div class="filter-bar">'
+    + '<div class="filter-item"><label>姓名(模糊搜索)</label><input type="text" placeholder="请输入姓名"></div>'
+    + '<div class="filter-item"><label>工号</label><input type="text" placeholder="请输入工号"></div>'
+    + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>' + DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('') + '</select></div>'
+    + '<div class="filter-item"><label>年假状态</label><select><option value="">全部</option><option>正常</option><option>已用完</option><option>即将到期</option><option>已冻结</option><option>已延期</option></select></div>'
+    + '<div class="filter-item"><label>修正状态</label><select><option value="">全部</option><option>正常</option><option>已修正</option><option>待修正</option></select></div>'
+    + '<div class="filter-item"><label>年假剩余</label><select><option value="">全部</option><option>0天</option><option>1-2天</option><option>3-5天</option><option>5天以上</option></select></div>'
+    + '<div class="filter-item"><label>员工状态</label><select><option value="">全部</option><option>在职</option><option>试用期</option><option>已离职</option></select></div>'
+    + '<div style="display:flex;gap:8px;align-items:flex-end;">'
+      + '<button class="btn-secondary" onclick="showToast(\'导出成功\')">导出</button>'
+      + '<button class="btn-primary" onclick="showToast(\'已筛选\')">查询</button>'
+      + '<span class="op-link" style="line-height:34px;" onclick="showToast(\'已清空\')">清空全部选项</span>'
+    + '</div></div>';
+  return statHtml + filterHtml + '<div class="table-container">'+pageSizeBar('leaveMgmt')+'<table><thead><tr>'
+    + '<th>工号</th><th>姓名</th><th>员工状态</th><th>部门</th><th>年假状态</th><th>总天数</th><th>剩余天数</th><th>入职日期</th><th>生效日期</th><th>到期日期</th><th>修正状态</th><th>操作</th>'
+    + '</tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('leaveMgmt', leaveRecordData.length)+'</div>';
+}
+
+function renderLeaveTypeConfig() {
+  var cardsHtml = leaveTypeConfigData.map(function(lt) {
+    var catBadge = lt.category==='法定假'?'badge-blue':'badge-purple';
+    var statusBadge = lt.status==='启用'?'badge-green':'badge-gray';
+    var paidBadge = lt.paid?'<span class="badge badge-green">带薪</span>':'<span class="badge badge-red">无薪</span>';
+    var carryBadge = lt.carryOver?'<span class="badge badge-blue">可结转'+lt.carryOverMonths+'个月</span>':'<span class="badge badge-gray">不可结转</span>';
+    return '<div class="shift-card" style="position:relative;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+        + '<span class="shift-name" style="font-size:16px;">'+lt.name+'</span>'
+        + '<span class="badge '+catBadge+'">'+lt.category+'</span>'
+        + '<span class="badge '+statusBadge+'">'+lt.status+'</span>'
+        + paidBadge + carryBadge
+      + '</div>'
+      + '<div class="shift-meta" style="color:#6b7280;font-size:12px;line-height:1.8;">'
+        + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'
+          + '<div><span style="color:#9ca3af;">编码：</span><span style="color:#374151;font-weight:500;">'+lt.code+'</span></div>'
+          + '<div><span style="color:#9ca3af;">单位：</span><span style="color:#374151;font-weight:500;">'+lt.unit+'</span></div>'
+          + '<div><span style="color:#9ca3af;">上限：</span><span style="color:#374151;font-weight:500;">'+lt.maxDays+lt.unit+'</span></div>'
+          + '<div><span style="color:#9ca3af;">最低司龄：</span><span style="color:#374151;font-weight:500;">'+lt.minService+'</span></div>'
+          + '<div><span style="color:#9ca3af;">审批级别：</span><span style="color:#374151;font-weight:500;">'+lt.approvalLevel+'</span></div>'
+          + '<div><span style="color:#9ca3af;">状态：</span><span style="color:#374151;font-weight:500;">'+lt.status+'</span></div>'
+        + '</div>'
+        + '<div style="margin-top:8px;padding:8px;background:#f8fafc;border-radius:4px;font-size:12px;color:#4b5563;">'+lt.desc+'</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:8px;">'
+        + '<span class="op-link" onclick="showToast(\'编辑：'+lt.name+'\')">编辑</span>'
+        + '<span class="op-link" onclick="showToast(\'查看规则：'+lt.name+'\')">查看规则</span>'
+        + '<span class="op-link '+(lt.status==='启用'?'danger':'')+'" onclick="showToast(\''+(lt.status==='启用'?'停用':'启用')+'：'+lt.name+'\')">'+(lt.status==='启用'?'停用':'启用')+'</span>'
+      + '</div>'
+    + '</div>';
+  }).join('');
+  var summaryHtml = '<div class="stat-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">'
+    + '<div class="stat-card"><div class="stat-label">假期类型总数</div><div class="stat-value">'+leaveTypeConfigData.length+'</div><div class="stat-sub">法定假'+leaveTypeConfigData.filter(function(l){return l.category==='法定假';}).length+'种 / 福利假'+leaveTypeConfigData.filter(function(l){return l.category==='福利假';}).length+'种</div></div>'
+    + '<div class="stat-card"><div class="stat-label">已启用</div><div class="stat-value" style="color:#16a34a;">'+leaveTypeConfigData.filter(function(l){return l.status==='启用';}).length+'</div><div class="stat-sub">当前可用</div></div>'
+    + '<div class="stat-card"><div class="stat-label">支持结转</div><div class="stat-value" style="color:#3b82f6;">'+leaveTypeConfigData.filter(function(l){return l.carryOver;}).length+'</div><div class="stat-sub">可结转至下期</div></div>'
+    + '<div class="stat-card"><div class="stat-label">无薪假期</div><div class="stat-value" style="color:#ef4444;">'+leaveTypeConfigData.filter(function(l){return !l.paid;}).length+'</div><div class="stat-sub">不发放薪资</div></div>'
+    + '</div>';
+  return summaryHtml + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-size:14px;font-weight:600;color:#374151;">假期类型列表</div><button class="btn-primary" onclick="showToast(\'新增假期类型\')">+ 新增假期类型</button></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">'+cardsHtml+'</div>';
+}
+
+function renderLeaveApproval() {
+  var statusBadge = function(s){ return s==='已通过'?'badge-green':s==='审批中'?'badge-blue':s==='已驳回'?'badge-red':s==='已撤销'?'badge-gray':'badge-yellow'; };
+  var rows = getPageData(leaveApprovalData, 'leaveApproval');
+  var tableRows = rows.map(function(r) {
+    var flowStepHtml = '<div style="display:flex;align-items:center;gap:4px;font-size:11px;">'
+      + '<span style="width:8px;height:8px;border-radius:50%;background:'+(r.flowStep>=1?'#22c55e':'#d1d5db')+';"></span>'
+      + '<span style="color:'+(r.flowStep>=1?'#16a34a':'#9ca3af')+';">提交</span>'
+      + '<span style="color:#d1d5db;">→</span>'
+      + '<span style="width:8px;height:8px;border-radius:50%;background:'+(r.flowStep>=2?'#22c55e':r.flowStep===1?'#3b82f6':'#d1d5db')+';"></span>'
+      + '<span style="color:'+(r.flowStep>=2?'#16a34a':r.flowStep===1?'#3b82f6':'#9ca3af')+';">上级</span>'
+      + '<span style="color:#d1d5db;">→</span>'
+      + '<span style="width:8px;height:8px;border-radius:50%;background:'+(r.flowStep>=3?'#22c55e':r.flowStep===2?'#3b82f6':'#d1d5db')+';"></span>'
+      + '<span style="color:'+(r.flowStep>=3?'#16a34a':r.flowStep===2?'#3b82f6':'#9ca3af')+';">完成</span>'
+      + '</div>';
+    return '<tr>'
+      + '<td style="font-family:monospace;font-size:12px;">'+r.applyNo+'</td>'
+      + '<td>'+r.applicant+'</td>'
+      + '<td style="font-size:12px;">'+r.empNo+'</td>'
+      + '<td>'+r.dept+'</td>'
+      + '<td><span class="badge badge-blue">'+r.leaveType+'</span></td>'
+      + '<td>'+r.startDate+'</td>'
+      + '<td>'+r.endDate+'</td>'
+      + '<td style="font-weight:600;">'+r.days+'天</td>'
+      + '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+r.reason+'">'+r.reason+'</td>'
+      + '<td><span class="badge '+statusBadge(r.status)+'">'+r.status+'</span></td>'
+      + '<td>'+flowStepHtml+'</td>'
+      + '<td>'+r.submitTime+'</td>'
+      + '<td style="white-space:nowrap;">'
+        + (r.status==='审批中'?'<span class="op-link" onclick="showApprovalDetailModal('+r.id+')">审批</span>':'')
+        + '<span class="op-link" onclick="showApprovalDetailModal('+r.id+')">详情</span>'
+        + (r.status==='待提交'||r.status==='审批中'?'<span class="op-link danger" onclick="showToast(\'已撤销\')">撤销</span>':'')
+      + '</td></tr>';
+  }).join('');
+  var statHtml = '<div class="stat-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px;">'
+    + '<div class="stat-card"><div class="stat-label">总申请数</div><div class="stat-value">'+leaveApprovalData.length+'</div><div class="stat-sub">本月累计</div></div>'
+    + '<div class="stat-card"><div class="stat-label">待审批</div><div class="stat-value" style="color:#f59e0b;">'+leaveApprovalData.filter(function(r){return r.status==='审批中';}).length+'</div><div class="stat-sub">需及时处理</div></div>'
+    + '<div class="stat-card"><div class="stat-label">已通过</div><div class="stat-value" style="color:#16a34a;">'+leaveApprovalData.filter(function(r){return r.status==='已通过';}).length+'</div><div class="stat-sub">审批完成</div></div>'
+    + '<div class="stat-card"><div class="stat-label">已驳回</div><div class="stat-value" style="color:#ef4444;">'+leaveApprovalData.filter(function(r){return r.status==='已驳回';}).length+'</div><div class="stat-sub">需反馈</div></div>'
+    + '<div class="stat-card"><div class="stat-label">待提交</div><div class="stat-value" style="color:#6b7280;">'+leaveApprovalData.filter(function(r){return r.status==='待提交';}).length+'</div><div class="stat-sub">草稿状态</div></div>'
+    + '</div>';
+  var filterHtml = '<div class="filter-bar">'
+    + '<div class="filter-item"><label>申请人</label><input type="text" placeholder="姓名/工号"></div>'
+    + '<div class="filter-item"><label>部门</label><select><option value="">全部</option>' + DEPTS.map(function(d){return '<option>'+d+'</option>';}).join('') + '</select></div>'
+    + '<div class="filter-item"><label>假期类型</label><select><option value="">全部</option><option>年休假</option><option>病假</option><option>事假</option><option>婚假</option><option>调休假</option><option>育儿假</option><option>产假</option><option>陪产假</option></select></div>'
+    + '<div class="filter-item"><label>审批状态</label><select><option value="">全部</option><option>待提交</option><option>审批中</option><option>已通过</option><option>已驳回</option><option>已撤销</option></select></div>'
+    + '<div class="filter-item"><label>申请日期</label><input type="date"></div>'
+    + '<div style="display:flex;gap:8px;align-items:flex-end;">'
+      + '<button class="btn-primary" onclick="showToast(\'已筛选\')">查询</button>'
+      + '<span class="op-link" style="line-height:34px;" onclick="showToast(\'已清空\')">清空</span>'
+    + '</div></div>';
+  return statHtml + filterHtml + '<div class="table-container">'+pageSizeBar('leaveApproval')+'<table><thead><tr>'
+    + '<th>申请单号</th><th>申请人</th><th>工号</th><th>部门</th><th>假期类型</th><th>开始日期</th><th>结束日期</th><th>天数</th><th>事由</th><th>状态</th><th>审批进度</th><th>提交时间</th><th>操作</th>'
+    + '</tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('leaveApproval', leaveApprovalData.length)+'</div>';
+}
+
+function showLeaveDetailModal(id) {
+  var r = leaveRecordData.find(function(d){return d.id===id;});
+  if(!r) return;
+  var html = '<div class="modal-title">'+r.name+' - 年假记录详情</div>'
+    + '<div class="info-grid" style="margin-bottom:20px;">'
+      + '<div class="info-item"><div class="info-label">工号</div><div class="info-value">'+r.empNo+'</div></div>'
+      + '<div class="info-item"><div class="info-label">姓名</div><div class="info-value">'+r.name+'</div></div>'
+      + '<div class="info-item"><div class="info-label">部门</div><div class="info-value">'+r.dept+'</div></div>'
+      + '<div class="info-item"><div class="info-label">员工状态</div><div class="info-value">'+r.empStatus+'</div></div>'
+      + '<div class="info-item"><div class="info-label">入职日期</div><div class="info-value">'+r.entryDate+'</div></div>'
+      + '<div class="info-item"><div class="info-label">司龄</div><div class="info-value">'+randInt(1,8)+'年</div></div>'
+    + '</div>'
+    + '<div class="form-section-title">年假额度明细</div>'
+    + '<div class="info-grid" style="margin-bottom:20px;">'
+      + '<div class="info-item"><div class="info-label">年假总天数</div><div class="info-value" style="font-size:20px;color:#1e293b;">'+r.totalDays+'天</div></div>'
+      + '<div class="info-item"><div class="info-label">已使用</div><div class="info-value" style="font-size:20px;color:#f59e0b;">'+(r.totalDays-r.remainDays)+'天</div></div>'
+      + '<div class="info-item"><div class="info-label">剩余天数</div><div class="info-value" style="font-size:20px;color:'+(r.remainDays<=2?'#ef4444':'#16a34a')+';">'+r.remainDays+'天</div></div>'
+      + '<div class="info-item"><div class="info-label">生效日期</div><div class="info-value">'+r.effectDate+'</div></div>'
+      + '<div class="info-item"><div class="info-label">到期日期</div><div class="info-value">'+r.expireDate+'</div></div>'
+      + '<div class="info-item"><div class="info-label">修正状态</div><div class="info-value">'+r.correctStatus+'</div></div>'
+    + '</div>'
+    + '<div class="form-section-title">使用记录</div>'
+    + '<table style="margin-bottom:16px;"><thead><tr><th>申请单号</th><th>类型</th><th>起止日期</th><th>天数</th><th>状态</th></tr></thead><tbody>'
+    + '<tr><td>LV20250001</td><td>年休假</td><td>2025-03-10 ~ 2025-03-12</td><td>3天</td><td><span class="badge badge-green">已通过</span></td></tr>'
+    + '<tr><td>LV20250015</td><td>年休假</td><td>2025-06-20 ~ 2025-06-21</td><td>2天</td><td><span class="badge badge-green">已通过</span></td></tr>'
+    + '</tbody></table>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+      + '<button class="btn-secondary" onclick="closeModal()">关闭</button>'
+      + '<button class="btn-primary" onclick="showToast(\'已导出\');closeModal()">导出记录</button>'
+    + '</div>';
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function showApprovalDetailModal(id) {
+  var r = leaveApprovalData.find(function(d){return d.id===id;});
+  if(!r) return;
+  var step1Class = r.flowStep>=1?'done':r.flowStep===0?'active':'pending';
+  var step2Class = r.flowStep>=2?'done':r.flowStep===1?'active':'pending';
+  var step3Class = r.flowStep>=3?'done':r.flowStep===2?'active':'pending';
+  var arrow1Class = r.flowStep>=1?'done':'';
+  var arrow2Class = r.flowStep>=2?'done':'';
+  var html = '<div class="modal-title">假期审批详情 - '+r.applyNo+'</div>'
+    + '<div class="info-grid" style="margin-bottom:20px;">'
+      + '<div class="info-item"><div class="info-label">申请人</div><div class="info-value">'+r.applicant+'</div></div>'
+      + '<div class="info-item"><div class="info-label">工号</div><div class="info-value">'+r.empNo+'</div></div>'
+      + '<div class="info-item"><div class="info-label">部门</div><div class="info-value">'+r.dept+'</div></div>'
+      + '<div class="info-item"><div class="info-label">假期类型</div><div class="info-value">'+r.leaveType+'</div></div>'
+      + '<div class="info-item"><div class="info-label">起止日期</div><div class="info-value">'+r.startDate+' ~ '+r.endDate+'</div></div>'
+      + '<div class="info-item"><div class="info-label">天数</div><div class="info-value" style="font-size:18px;color:#3b82f6;font-weight:700;">'+r.days+'天</div></div>'
+      + '<div class="info-item" style="grid-column:span 3;"><div class="info-label">请假事由</div><div class="info-value">'+r.reason+'</div></div>'
+    + '</div>'
+    + '<div class="form-section-title">审批流程</div>'
+    + '<div class="flow-steps">'
+      + '<div class="flow-step"><div class="step-circle '+step1Class+'">1</div><div class="step-label '+(step1Class==='active'?'active':'')+'">提交申请</div><div style="font-size:11px;color:#9ca3af;">'+r.submitTime+'</div></div>'
+      + '<div class="flow-arrow '+arrow1Class+'">→</div>'
+      + '<div class="flow-step"><div class="step-circle '+step2Class+'">2</div><div class="step-label '+(step2Class==='active'?'active':'')+'">上级审批</div><div style="font-size:11px;color:#9ca3af;">审批人：'+r.approver1+'</div></div>'
+      + '<div class="flow-arrow '+arrow2Class+'">→</div>'
+      + '<div class="flow-step"><div class="step-circle '+step3Class+'">3</div><div class="step-label '+(step3Class==='active'?'active':'')+'">审批完成</div><div style="font-size:11px;color:#9ca3af;">'+r.approvalTime+'</div></div>'
+    + '</div>'
+    + (r.status==='审批中'?'<div style="margin-top:16px;padding:16px;background:#f8fafc;border-radius:8px;">'
+      + '<div class="form-group" style="margin-bottom:12px;"><label>审批意见</label><textarea rows="3" placeholder="请输入审批意见..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;resize:vertical;"></textarea></div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+        + '<button class="btn-secondary" onclick="showToast(\'已退回\');closeModal()">退回</button>'
+        + '<button class="btn-danger" style="padding:8px 20px;font-size:14px;" onclick="showToast(\'已驳回\');closeModal()">驳回</button>'
+        + '<button class="btn-primary" onclick="showToast(\'已通过\');closeModal()">通过</button>'
+      + '</div></div>':'')
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">'
+      + '<button class="btn-secondary" onclick="closeModal()">关闭</button>'
+    + '</div>';
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.remove('hidden');
 }
 
 function renderDailyAtt() {
@@ -3492,10 +3757,11 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">审批流程</div>申请人提交 → 直属上级审批 → HR备案 → 生效<br>• 请假>3天需部门负责人审批<br>• 出差需财务确认预算<br>• 加班需提前申请（特殊情况可事后补）</div>'
     + '<div class="prd-note"><div class="prd-note-title">联动处理</div>• 请假通过后自动扣减假期余额<br>• 加班通过后计入工时统计<br>• 出差期间不计迟到/早退<br>• 补卡通过后修正考勤状态</div>',
 
-    att_leave: '<div class="prd-note"><div class="prd-note-title">模块定位</div>假期额度管理，维护每位员工的各类假期余额（应休/已休/剩余），支持批量初始化和手动调整。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">10种假期类型</div>年休假、病假、事假、婚假、产假、陪产假、丧假、调休假、育儿假、工伤假</div>'
-    + '<div class="prd-note"><div class="prd-note-title">年假规则</div>• 司龄<1年：5天<br>• 1年≤司龄<10年：7天<br>• 10年≤司龄<20年：10天<br>• 司龄≥20年：15天<br>• 每年1月1日自动刷新</div>'
-    + '<div class="prd-note"><div class="prd-note-title">额度管理</div>• 批量初始化：每年初为全员生成新年度假额<br>• 手动调整：HR可因特殊情况增减额度<br>• 过期处理：年假当年未用完可结转至次年3月底</div>',
+    att_leave: '<div class="prd-note"><div class="prd-note-title">模块定位</div>假期管理综合模块，包含假期记录查询、假期类型配置、假期申请审批三大功能区域，通过Tab切换。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">Tab1 - 假期记录</div>• <span class="highlight">丰富筛选条件</span>：姓名模糊搜索、工号、部门、年假状态、修正状态、年假剩余、员工状态<br>• <span class="highlight">统计卡片</span>：总人数、年假正常、即将到期、已用完、已修正<br>• <span class="highlight">表格字段</span>：工号、姓名、员工状态、部门、年假状态、总天数、剩余天数、入职日期、生效日期、到期日期、修正状态<br>• <span class="highlight">行操作</span>：延期（红色边框按钮）、修正（蓝色按钮）、年假记录（弹窗详情）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">Tab2 - 假期类型管理</div>• <span class="highlight">12种假期类型</span>：年休假、病假、事假、婚假、产假、陪产假、丧假、调休假、育儿假、工伤假、年假福利假、考试假<br>• <span class="highlight">分类</span>：法定假10种 + 福利假3种<br>• <span class="highlight">配置字段</span>：编码、单位、上限天数、最低司龄、是否带薪、是否可结转、结转月数、审批级别、规则描述<br>• <span class="highlight">操作</span>：编辑、查看规则、启用/停用</div>'
+    + '<div class="prd-note"><div class="prd-note-title">Tab3 - 假期申请审批</div>• <span class="highlight">审批流程</span>：提交申请 → 直属上级审批 → 审批完成（3步流程可视化）<br>• <span class="highlight">状态</span>：待提交、审批中、已通过、已驳回、已撤销<br>• <span class="highlight">审批弹窗</span>：显示申请详情 + 流程进度 + 审批意见输入 + 通过/驳回/退回操作<br>• <span class="highlight">筛选</span>：申请人、部门、假期类型、审批状态、申请日期</div>'
+    + '<div class="prd-note"><div class="prd-note-title">年假规则</div>• 司龄<1年：5天<br>• 1年≤司龄<10年：7天<br>• 10年≤司龄<20年：10天<br>• 司龄≥20年：15天<br>• 每年1月1日自动刷新<br>• 未用完可结转至次年3月底</div>',
 
     att_daily: '<div class="prd-note"><div class="prd-note-title">模块定位</div>每日考勤明细展示，基于打卡数据和班次规则计算每位员工每天的考勤状态。</div>'
     + '<div class="prd-note"><div class="prd-note-title">展示字段</div>工号、姓名、部门、日期、星期、班次、应上下班时间、实际上下班时间、打卡来源、考勤状态、迟到/早退分钟、工时、数据状态</div>'
