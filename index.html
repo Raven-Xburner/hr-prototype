@@ -279,49 +279,64 @@ function initData() {
     punchData.push({ id:i+1, empNo:'EMP'+String(randInt(1000,9999)), name:pName, dept:pDept, datetime:randDate(2025,2025)+' '+String(pHour).padStart(2,'0')+':'+String(pMin).padStart(2,'0')+':'+String(randInt(0,59)).padStart(2,'0'), punchType:pType, source:rand(punchSources), location:rand(punchLocations) });
   }
   shiftData = [
-    { id:1, name:'标准班次', code:'STD01', start:'09:00', end:'18:00', flex:15, days:'周一至周五', crossDay:false, status:'启用', bindCount:186,
+    { id:1, name:'标准班次', code:'STD01', start:'09:00', end:'18:00', flex:15, days:'周一至周五', crossDay:false, status:'启用中', bindCount:186,
+      desc:'公司全员标准工时制度，覆盖大部分职能部门', members:'张伟、李娜、王芳',
       deptBindings:['技术研发部','产品设计部','市场营销部','人力资源部','财务部']
     },
-    { id:2, name:'弹性班次', code:'FLEX01', start:'09:00', end:'18:00', flex:60, days:'周一至周五', crossDay:false, status:'启用', bindCount:42,
+    { id:2, name:'弹性班次', code:'FLEX01', start:'09:00', end:'18:00', flex:60, days:'周一至周五', crossDay:false, status:'启用中', bindCount:42,
+      desc:'核心时段 10:00-16:00，其余时间弹性安排', members:'陈晨、刘洋',
       deptBindings:['数据分析部','算法研究部']
     },
-    { id:3, name:'早班', code:'EAR01', start:'07:00', end:'15:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:28,
+    { id:3, name:'早班', code:'EAR01', start:'07:00', end:'15:00', flex:10, days:'排班制', crossDay:false, status:'启用中', bindCount:28,
+      desc:'客服及运营部门早时段值班班次', members:'赵敏、孙悦',
       deptBindings:['客户服务部','运营管理部','前台接待部']
     },
-    { id:4, name:'中班', code:'MID01', start:'15:00', end:'23:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:25,
+    { id:4, name:'中班', code:'MID01', start:'15:00', end:'23:00', flex:10, days:'排班制', crossDay:false, status:'启用中', bindCount:25,
+      desc:'客服及运营部门中时段值班班次', members:'周杰、吴静',
       deptBindings:['客户服务部','技术支持部']
     },
-    { id:5, name:'夜班', code:'NIGHT01', start:'23:00', end:'07:00', flex:10, days:'排班制', crossDay:true, status:'停用', bindCount:12,
+    { id:5, name:'夜班', code:'NIGHT01', start:'23:00', end:'07:00', flex:10, days:'排班制', crossDay:true, status:'禁用', bindCount:12,
+      desc:'安全监控 24 小时值守夜班（跨日）', members:'郑浩',
       deptBindings:['安全监控部']
     },
-    { id:6, name:'周末班', code:'WKD01', start:'09:00', end:'18:00', flex:0, days:'周六日', crossDay:false, status:'启用', bindCount:15,
+    { id:6, name:'周末班', code:'WKD01', start:'09:00', end:'18:00', flex:0, days:'周六日', crossDay:false, status:'启用中', bindCount:15,
+      desc:'周末值班及运维保障班次', members:'冯雪、蒋鑫',
       deptBindings:['客户服务部','运维保障部']
     },
-    { id:7, name:'高管弹性', code:'EXEC01', start:'10:00', end:'19:00', flex:120, days:'周一至周五', crossDay:false, status:'启用', bindCount:8,
+    { id:7, name:'高管弹性', code:'EXEC01', start:'10:00', end:'19:00', flex:120, days:'周一至周五', crossDay:false, status:'启用中', bindCount:8,
+      desc:'高管弹性工作制，绑定总经办及战略部门', members:'钱进',
       deptBindings:['总经办','战略发展部']
     },
-    { id:8, name:'实习班次', code:'INT01', start:'09:30', end:'17:30', flex:30, days:'周一至周五', crossDay:false, status:'启用', bindCount:20,
+    { id:8, name:'实习班次', code:'INT01', start:'09:30', end:'17:30', flex:30, days:'周一至周五', crossDay:false, status:'启用中', bindCount:20,
+      desc:'实习生项目组专用短时班次', members:'韩磊、曹颖',
       deptBindings:['实习生项目组']
     },
-    { id:9, name:'工厂早班', code:'FAC_EAR', start:'06:00', end:'14:00', flex:5, days:'排班制', crossDay:false, status:'启用', bindCount:45,
+    { id:9, name:'工厂早班', code:'FAC_EAR', start:'06:00', end:'14:00', flex:5, days:'排班制', crossDay:false, status:'启用中', bindCount:45,
+      desc:'生产制造部门早班排班', members:'许强、沈红',
       deptBindings:['生产制造一部','生产制造二部','品质管理部']
     },
-    { id:10, name:'工厂晚班', code:'FAC_LATE', start:'14:00', end:'22:00', flex:5, days:'排班制', crossDay:false, status:'启用', bindCount:42,
+    { id:10, name:'工厂晚班', code:'FAC_LATE', start:'14:00', end:'22:00', flex:5, days:'排班制', crossDay:false, status:'启用中', bindCount:42,
+      desc:'生产制造部门晚班排班', members:'卢军、姜涛',
       deptBindings:['生产制造一部','生产制造二部','仓储物流部']
     },
-    { id:11, name:'工厂夜班', code:'FAC_NIGHT', start:'22:00', end:'06:00', flex:5, days:'排班制', crossDay:true, status:'启用', bindCount:38,
+    { id:11, name:'工厂夜班', code:'FAC_NIGHT', start:'22:00', end:'06:00', flex:5, days:'排班制', crossDay:true, status:'启用中', bindCount:38,
+      desc:'生产制造部门跨日夜班排班', members:'崔健、钟离',
       deptBindings:['生产制造一部','设备维护部']
     },
-    { id:12, name:'零售早班', code:'RET_EAR', start:'08:00', end:'16:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:35,
+    { id:12, name:'零售早班', code:'RET_EAR', start:'08:00', end:'16:00', flex:10, days:'排班制', crossDay:false, status:'启用中', bindCount:35,
+      desc:'门店销售早班排班', members:'谢婷',
       deptBindings:['门店销售部','客户服务部']
     },
-    { id:13, name:'零售晚班', code:'RET_LATE', start:'16:00', end:'24:00', flex:10, days:'排班制', crossDay:false, status:'启用', bindCount:32,
+    { id:13, name:'零售晚班', code:'RET_LATE', start:'16:00', end:'24:00', flex:10, days:'排班制', crossDay:false, status:'启用中', bindCount:32,
+      desc:'门店销售晚班及收银结算排班', members:'苏明',
       deptBindings:['门店销售部','收银结算部']
     },
-    { id:14, name:'医疗白班', code:'MED_DAY', start:'08:00', end:'17:00', flex:0, days:'排班制', crossDay:false, status:'启用', bindCount:55,
+    { id:14, name:'医疗白班', code:'MED_DAY', start:'08:00', end:'17:00', flex:0, days:'排班制', crossDay:false, status:'启用中', bindCount:55,
+      desc:'门诊住院白班医护排班', members:'何平、高翔',
       deptBindings:['门诊部','住院部','医技科室']
     },
-    { id:15, name:'医疗夜班', code:'MED_NIGHT', start:'17:00', end:'08:00', flex:0, days:'排班制', crossDay:true, status:'启用', bindCount:28,
+    { id:15, name:'医疗夜班', code:'MED_NIGHT', start:'17:00', end:'08:00', flex:0, days:'排班制', crossDay:true, status:'启用中', bindCount:28,
+      desc:'急诊住院跨日夜班医护排班', members:'林峰、罗兰',
       deptBindings:['急诊科','住院部','ICU']
     }
   ];
@@ -1639,34 +1654,41 @@ function renderPunchData() {
   + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>打卡时间</th><th>打卡类型</th><th>来源</th><th>打卡位置</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', punchData.length)+'</div>';
 }
 
+function toggleShiftStatus(id, target) {
+  var s = shiftData.find(function(x){return x.id===id;});
+  if(!s) return showToast('未找到班次信息');
+  if(s.status === target) return showToast(s.name+' 当前已是'+(target==='启用中'?'启用中':'禁用')+'状态');
+  s.status = target;
+  renderPage();
+  showToast('班次「'+s.name+'」已'+(target==='启用中'?'启用':'禁用'));
+}
+
 function renderShiftMgmt() {
-  var cardsHtml = shiftData.map(function(s) {
-    return '<div class="shift-card"><div class="shift-name">'+s.name+' <span class="badge '+(s.status==='启用'?'badge-green':'badge-gray')+'" style="float:right;">'+s.status+'</span></div>'
-    + '<div class="shift-time">'+s.start+' - '+s.end+' <span style="font-size:12px;color:#6b7280;">±'+s.flex+'min</span></div>'
-    + '<div class="shift-meta">编码: '+s.code+' | '+s.days+(s.crossDay?' | <span style="color:#ef4444;">跨日</span>':'')+'</div>'
-    + '<div class="shift-meta">绑定人数: '+s.bindCount+'人</div>'
-    + '<div style="display:flex;gap:8px;margin-top:4px;"><span class="op-link" onclick="openShiftDetail('+s.id+')">详情</span><span class="op-link" onclick="showToast(\'编辑班次\')">编辑</span><span class="op-link danger" onclick="showToast(\''+(s.status==='启用'?'已停用':'已启用')+'\')">'+(s.status==='启用'?'停用':'启用')+'</span></div></div>';
-  }).join('');
-  
-  // Simplified binding table showing only department bindings
-  var bindRows = shiftData.filter(function(s){return s.status==='启用';}).map(function(s){
+  var bindRows = shiftData.map(function(s){
     var deptBindings = s.deptBindings || [];
-    
+
     var bindingInfo = '';
     if(deptBindings.length > 0) {
       bindingInfo += deptBindings.map(function(d){return '<span class="badge badge-blue" style="margin-right:4px;">'+d+'</span>';}).join('');
     } else {
       bindingInfo = '<span style="color:#9ca3af;font-size:12px;">未绑定部门</span>';
     }
-    
-    return '<tr><td>'+s.name+'</td><td>'+s.code+'</td><td>'+s.start+'-'+s.end+'</td><td>'+s.days+'</td><td>'+s.bindCount+'人</td><td style="text-align:left;">'+bindingInfo+'<div style="margin-top:6px;"><span class="op-link" onclick="openShiftDetail('+s.id+')">查看详情</span><span class="op-link" onclick="showToast(\'修改绑定\')">修改</span></div></td></tr>';
+
+    var statusBadge = s.status==='启用中'
+      ? '<span class="badge badge-green">启用中</span>'
+      : '<span class="badge badge-gray">禁用</span>';
+
+    var ops = '<span class="op-link" onclick="openShiftDetail('+s.id+')">详情</span>'
+    + '<span class="op-link" onclick="showToast(\'编辑班次\')">编辑</span>'
+    + '<span class="op-link'+(s.status==='启用中'?'':' disabled')+'" onclick="toggleShiftStatus('+s.id+',\'启用中\')">启用</span>'
+    + '<span class="op-link danger'+(s.status==='禁用'?' disabled':'')+'" onclick="toggleShiftStatus('+s.id+',\'禁用\')">禁用</span>';
+
+    return '<tr><td>'+s.name+'</td><td>'+s.code+'</td><td style="text-align:left;max-width:200px;">'+(s.desc||'-')+'</td><td>'+s.start+' - '+s.end+'</td><td>'+s.days+'</td><td>'+s.bindCount+'人</td><td style="text-align:left;">'+bindingInfo+'</td><td style="text-align:left;font-size:12px;">'+(s.members||'-')+'</td><td>'+statusBadge+'</td><td style="white-space:nowrap;">'+ops+'</td></tr>';
   }).join('');
-  
+
   return '<div class="page-header"><h1 class="page-title">班次管理</h1><button class="btn-primary" onclick="showToast(\'新增班次\')">+ 新增班次</button></div>'
-  + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="font-size:16px;font-weight:600;color:#374151;">班次模板</h2></div>'
-  + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px;">'+cardsHtml+'</div>'
   + '<h2 style="font-size:16px;font-weight:600;color:#374151;margin-bottom:12px;">班次绑定情况（按部门）</h2>'
-  + '<div class="table-container"><table><thead><tr><th>班次名称</th><th>编码</th><th>时间</th><th>工作天数</th><th>绑定人数</th><th>绑定部门</th></tr></thead><tbody>'+bindRows+'</tbody></table></div>';
+  + '<div class="table-container"><table><thead><tr><th>班次名称</th><th>编码</th><th>设立说明</th><th>上下班时间</th><th>工作日天数</th><th>绑定人数</th><th>绑定部门</th><th>人员</th><th>状态</th><th>操作</th></tr></thead><tbody>'+bindRows+'</tbody></table></div>';
 }
 
 function renderApplyMgmt() {
@@ -2056,7 +2078,7 @@ function openShiftDetail(id) {
   + '<div class="info-item"><div class="info-label">弹性范围</div><div class="info-value">±'+shift.flex+'分钟</div></div>'
   + '<div class="info-item"><div class="info-label">工作天数</div><div class="info-value">'+shift.days+'</div></div>'
   + '<div class="info-item"><div class="info-label">是否跨日</div><div class="info-value">'+(shift.crossDay?'是':'否')+'</div></div>'
-  + '<div class="info-item"><div class="info-label">启用状态</div><div class="info-value"><span class="badge '+(shift.status==='启用'?'badge-green':'badge-gray')+'">'+shift.status+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">启用状态</div><div class="info-value"><span class="badge '+(shift.status==='启用中'?'badge-green':'badge-gray')+'">'+(shift.status==='启用中'?'启用中':'禁用')+'</span></div></div>'
   + '<div class="info-item"><div class="info-label">绑定人数</div><div class="info-value">'+shift.bindCount+'人</div></div>'
   + '</div>'
   + '<h3 style="font-size:14px;font-weight:600;color:#374151;margin-bottom:8px;">部门绑定 ('+deptBindings.length+')</h3>'
@@ -2163,17 +2185,22 @@ function openCorrectionForm(id) {
 function openShiftDetail(id) {
   var s = shiftData.find(function(x){return x.id===id;});
   if(!s) return;
+  var deptBindings = s.deptBindings || [];
+  var deptInfo = deptBindings.length > 0 ? deptBindings.join('、') : '<span style="color:#9ca3af;">未绑定部门</span>';
   var html = '<div class="modal-title">班次详情 - '+s.name+'</div>'
   + '<div class="info-grid">'
   + '<div class="info-item"><div class="info-label">班次名称</div><div class="info-value">'+s.name+'</div></div>'
   + '<div class="info-item"><div class="info-label">班次编码</div><div class="info-value">'+s.code+'</div></div>'
+  + '<div class="info-item"><div class="info-label">设立说明</div><div class="info-value">'+(s.desc||'-')+'</div></div>'
   + '<div class="info-item"><div class="info-label">上班时间</div><div class="info-value">'+s.start+'</div></div>'
   + '<div class="info-item"><div class="info-label">下班时间</div><div class="info-value">'+s.end+'</div></div>'
   + '<div class="info-item"><div class="info-label">弹性范围</div><div class="info-value">±'+s.flex+'分钟</div></div>'
-  + '<div class="info-item"><div class="info-label">工作天数</div><div class="info-value">'+s.days+'</div></div>'
+  + '<div class="info-item"><div class="info-label">工作日天数</div><div class="info-value">'+s.days+'</div></div>'
   + '<div class="info-item"><div class="info-label">是否跨日</div><div class="info-value">'+(s.crossDay?'是':'否')+'</div></div>'
-  + '<div class="info-item"><div class="info-label">状态</div><div class="info-value"><span class="badge '+(s.status==='启用'?'badge-green':'badge-gray')+'">'+s.status+'</span></div></div>'
+  + '<div class="info-item"><div class="info-label">状态</div><div class="info-value"><span class="badge '+(s.status==='启用中'?'badge-green':'badge-gray')+'">'+(s.status==='启用中'?'启用中':'禁用')+'</span></div></div>'
   + '<div class="info-item"><div class="info-label">绑定人数</div><div class="info-value">'+s.bindCount+'人</div></div>'
+  + '<div class="info-item"><div class="info-label">绑定部门</div><div class="info-value">'+deptInfo+'</div></div>'
+  + '<div class="info-item"><div class="info-label">人员</div><div class="info-value">'+(s.members||'-')+'</div></div>'
   + '</div>'
   + '<div style="text-align:right;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:16px;"><button class="btn-secondary" onclick="closeModal()">关闭</button></div>';
   openModal(html);
