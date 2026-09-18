@@ -663,8 +663,8 @@ var MODULE_DESC = {
   reward: '员工奖惩记录管理：分级审批、红头文件管理、绩效分数自动联动',
   tag: '人才标签管理：手动/规则双模式打标，标签回流员工档案，支撑人才看板组合筛选',
   employee: '员工全生命周期档案：13个Tab页展示、版本控制、敏感字段脱敏、RBAC权限控制',
-  att_punch: '对接考勤机/打卡App的原始打卡数据，展示打卡来源、时间与异常状态',
-  att_shift: '班次规则配置：固定班/弹性班/排班制，支持跨天班次与休息规则设置',
+  att_punch: '多来源打卡数据采集与展示（企微API/指纹机/刷脸机/门禁机/OA系统），支持手动拉取与原始数据回溯',
+  att_shift: '考勤规则配置：固定时间/按排班/自由上下班三选一，绑定按日期＞个人＞部门',
   att_special: '特殊考勤人群管理：高管、销售外勤、驻场人员等适用特殊考勤规则',
   att_apply: '请假/出差/加班/补卡/外勤五类申请统一管理，审批通过后自动联动考勤结果',
   att_leave: '假期综合管理：假期记录查询、12种假期类型配置、假期申请审批三大功能区',
@@ -1679,7 +1679,7 @@ function renderPunchData() {
   + '<button class="btn-secondary" onclick=\'showToast(\'已筛选\')\'>查询</button>'
   + '<button class="btn-primary" onclick="manualPullPunch()">手动拉取</button>'
   + '</div>'
-  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>打卡时间</th><th>打卡类型</th><th>数据来源</th><th>来源设备ID</th><th>原始JSON</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', punchData.length)+'</div>';
+  + '<div class="table-container">'+pageSizeBar('attendance')+'<table><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>打卡时间</th><th>打卡类型</th><th>数据来源</th><th>来源设备ID</th><th>打卡原始数据</th></tr></thead><tbody>'+tableRows+'</tbody></table>'+renderPagination('attendance', punchData.length)+'</div>';
 }
 
 function manualPullPunch() {
@@ -4521,8 +4521,8 @@ var BOUNDARY_NOTES = {
   reward: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 金额：0-100,000元，<span class="highlight">0表示无金额奖惩</span>（如通报表扬）<br>• 奖惩主题：≤30字<br>• 等级枚举：公司级/事业部级/部门级<br>• 绩效影响分值：-100 ~ +100，正数加分/负数减分；<span class="highlight">关联绩效=是时条件必填</span><br>• 红头文件：公司级/事业部级必传（PDF/JPG）<br>• 生效日期后绩效分数自动联动更新，操作不可逆需二次确认</div>',
   tag: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 标签名称：2-20字符，同类型内<span class="highlight">不可重名</span><br>• 标签类型：5类固定 + 自定义扩展<br>• 颜色：支持16进制自定义（默认蓝#3b82f6）<br>• 规则打标：学历=985/211/一本 → 自动打标，<span class="highlight">规则实时生效</span>，新增学历自动补打<br>• 单员工标签数：无上限，但看板筛选最多<span class="highlight">组合3个</span>标签<br>• 删除标签：需先解除全部员工绑定，否则拦截</div>',
   employee: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 档案Tab：13个，不可增删<br>• 脱敏规则：身份证/手机号前3后4，银行卡仅后4位，薪酬非薪酬角色显示***<br>• 变更日志：记录修改人/时间/字段/前后值，<span class="highlight">永久保留不可删改</span><br>• 版本对比：支持任意两个时间点快照差异对比<br>• 企业邮箱：默认 系统账户@richinfo.cn，可修改<br>• 基本工资：固定3000元，不可编辑<br>• 司龄：1位小数，实时滚动计算<br>• 离职员工档案：全部字段转只读</div>',
-  att_punch: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 打卡时间：精确到秒，跨天班次归起始日统计<br>• 打卡来源枚举：考勤机/App/GPS外勤/补卡<br>• 定位打卡：有效半径<span class="highlight">500米</span>，超出标记外勤<br>• 原始打卡数据：<span class="highlight">不可修改不可删除</span>，修正走数据修正流程留痕<br>• 单日打卡次数：无上限，取班次时间窗内最近的有效记录<br>• 手动拉取频率：≤1次/分钟，防止接口滥用</div>',
-  att_shift: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 班次时长：1-24小时，跨天班次支持（如下22:00-次日06:00）<br>• 弹性时间：0-120分钟<br>• 迟到判定：晚于规定时间+弹性范围<br>• 午休扣时：0-120分钟，从工时中扣除<br>• 班次编码：唯一，删除前须解除全部部门绑定<br>• 同一员工同一时段只能绑定一个班次</div>',
+  att_punch: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 打卡时间：精确到秒，跨天班次归起始日统计<br>• 数据来源枚举：企微API/指纹机/刷脸机/门禁机/OA系统<br>• 来源设备ID：仅硬件来源有值，企微API来源为空<br>• 定位打卡：有效半径<span class="highlight">500米</span>，超出标记外勤<br>• 打卡原始数据：<span class="highlight">不可修改不可删除</span>，修正走数据修正流程留痕<br>• 单日打卡次数：无上限，取班次时间窗内最近的有效记录<br>• 手动拉取频率：≤1次/分钟，防止接口滥用</div>',
+  att_shift: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 规则编码：唯一，格式如 STD_0900，不可与已有规则重复<br>• 工作时间：每段下班需晚于上班，跨天时段拆分为多段配置；支持一天多段（多次上下班打卡）<br>• 弹性打卡：0-120分钟，三种模式（允许晚到早走/早到早走晚到晚走）<br>• 晚走晚到：每条规则最多配置多档（晚走N分钟→次日晚到M分钟）<br>• 可打卡时段：超出时间窗（如04:00-次日03:59）的打卡不计入考勤<br>• 特殊日期：最多可配置365条必须/无需打卡日期<br>• 规则绑定：同一员工同一时段仅生效一个规则（按日期&gt;个人&gt;部门）<br>• 禁用规则：须先通过停用检查，处理完绑定人员</div>',
   att_special: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 特殊人群组：高管/销售外勤/驻场/孕期等<br>• 孕期特殊考勤：可凭证明免迟到早退打卡，有效期最长<span class="highlight">280天</span><br>• 高管组：可配置免打卡，但出差/请假仍需申请<br>• 销售外勤：GPS打卡半径可放宽至<span class="highlight">5公里</span>，或完全按拜访记录认定<br>• 特殊规则优先级：高于普通班次规则</div>',
   att_apply: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 请假：最小单位0.5天，超出余额系统拦截<br>• 出差：需填写地点/事由/交通方式，预计费用≥0元<br>• 加班：区分工作日/休息日/节假日（影响加班费倍率1.5/2/3倍）<br>• 补卡：每月最多<span class="highlight">3次</span>，超次需部门负责人特批<br>• 外勤：不计迟到早退，但须当日提交<br>• 请假>3天：审批升级至部门负责人<br>• 加班：原则上须提前申请，特殊情况可事后24小时内补</div>',
   att_leave: '<div class="prd-note boundary"><div class="prd-note-title">数据边界/特殊值</div>• 假期类型：12种（法定假10种+福利假3种）<br>• 年假天数（按司龄）：<1年=5天 / 1-10年=7天 / 10-20年=10天 / ≥20年=15天<br>• 年假刷新：每年1月1日，未休完可结转至<span class="highlight">次年3月底</span><br>• 病假：需上传证明，单次>30天转为长病假管理<br>• 婚假/产假/陪产假：按地方规定，天数从领取证明之日起锁定<br>• 剩余天数≤2天：状态自动标「即将到期」红色提示<br>• 假期余额：不出现负值，扣减前校验</div>',
@@ -4610,15 +4610,17 @@ function renderPrd() {
     + '<div class="prd-note"><div class="prd-note-title">业务规则</div>• 薪酬信息仅HR总监及以上可查看明文<br>• 变更日志记录所有字段修改（修改人/时间/前值/后值）<br>• 离职员工档案保留2年<br>• 档案导出需审批</div>'
     + '<div class="prd-note"><div class="prd-note-title">数据安全</div>• 敏感字段加密存储<br>• 查看日志全量记录<br>• 批量导出需二次审批<br>• 脱敏规则不可配置（强制）</div>',
 
-    att_punch: '<div class="prd-note"><div class="prd-note-title">模块定位</div>原始打卡数据采集与展示，支持多数据源接入（企微API+硬件设备），提供去重、异常检测功能。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">数据源说明</div>• <span class="highlight">企微APP</span>：通过企业微信API定时拉取（每5分钟）<br>• <span class="highlight">指纹机</span>：本地硬件设备，数据上传至服务器<br>• <span class="highlight">刷脸机</span>：人脸识别设备，支持活体检测</div>'
+    att_punch: '<div class="prd-note"><div class="prd-note-title">模块定位</div>原始打卡数据采集与展示，支持多数据源接入（企微API+硬件设备+OA系统），提供去重、异常检测功能。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">数据源说明</div>• <span class="highlight">企微API</span>：通过企业微信API定时拉取，管理员可手动触发即时拉取（不等待定时任务）<br>• <span class="highlight">指纹机</span>：本地硬件设备，数据上传至服务器<br>• <span class="highlight">刷脸机</span>：人脸识别设备，支持活体检测<br>• <span class="highlight">门禁机</span>：门禁刷卡设备，通行记录同步为打卡数据<br>• <span class="highlight">OA系统</span>：HTTP 回调推送，审批完成的外勤/补卡数据自动写入</div>'
+    + '<div class="prd-note"><div class="prd-note-title">关键字段说明</div>• 部门：事业部-部门-科室-小组 四级全路径<br>• 打卡时间：精确到秒（xxxx年xx月xx日xx:xx:xx）<br>• 来源设备ID：硬件设备唯一标识，企微API来源为空<br>• 打卡原始数据：接口/设备上报的JSON原文，<span class="highlight">点击查看全文，用于数据回溯</span>，不可修改</div>'
     + '<div class="prd-note"><div class="prd-note-title">去重规则</div>• 同一员工5分钟内多次打卡视为一次<br>• 以最早打卡时间为准<br>• 跨天打卡按实际日期分别记录</div>'
     + '<div class="prd-note"><div class="prd-note-title">异常处理</div>• 位置异常：打卡位置不在指定范围内<br>• 时间异常：非工作时段打卡<br>• 设备异常：设备离线或数据格式错误</div>',
 
-    att_shift: '<div class="prd-note"><div class="prd-note-title">模块定位</div>班次模板管理，定义不同工作时间段的上下班时间、弹性范围、跨日规则，支持绑定到部门或个人。</div>'
-    + '<div class="prd-note"><div class="prd-note-title">班次配置字段</div>• 班次名称/编码：唯一标识<br>• 上下班时间：如09:00-18:00<br>• 弹性范围：允许迟到/早退的分钟数<br>• 工作天数：周一至周五 / 排班制<br>• 是否跨日：夜班可能跨天</div>'
-    + '<div class="prd-note"><div class="prd-note-title">绑定优先级</div>个人绑定 > 部门绑定 > 默认班次<br>• 优先级高的覆盖低的<br>• 可按日期单独设置例外班次</div>'
-    + '<div class="prd-note"><div class="prd-note-title">标准班次模板</div>• 标准班次：09:00-18:00 ±15min<br>• 弹性班次：09:00-18:00 ±60min<br>• 早班：07:00-15:00 ±10min<br>• 中班：15:00-23:00 ±10min<br>• 夜班：23:00-07:00 ±10min（跨日）</div>',
+    att_shift: '<div class="prd-note"><div class="prd-note-title">模块定位</div>考勤班次规则管理：定义打卡规则（规则类型三选一）并绑定到部门/个人/日期，规则生效后系统按规则自动计算打卡与考勤结果。</div>'
+    + '<div class="prd-note"><div class="prd-note-title">规则类型（三选一）</div>• <span class="highlight">固定时间上下班</span>：固定工作日+固定上下班时间，适用于标准工时员工<br>• <span class="highlight">按排班上下班</span>：管理员在月历上手动排班，成员按排班表打卡，适用于倒班/客服/生产场景<br>• <span class="highlight">自由上下班</span>：不固定打卡时间，仅统计出勤时长</div>'
+    + '<div class="prd-note"><div class="prd-note-title">关键配置项</div>• 规则名称/班次编码：编码唯一（如 STD_0900）<br>• 打卡时间：独立弹窗配置——工作日勾选、多段工作时间（支持需/无需打卡）、休息时间、可打卡时段、弹性打卡（三种模式）、晚走晚到<br>• 特殊日期：指定日期必须/无需打卡<br>• 节假日：法定节假日默认免打卡（可查节假日日历）<br>• 休息日：自定义休息日设置<br>• 生效日期：人员班次绑定生效日，支持永久有效</div>'
+    + '<div class="prd-note"><div class="prd-note-title">绑定规则与优先级</div><span class="highlight">按日期绑定 &gt; 个人单独绑定 &gt; 部门批量绑定</span><br>• 优先级高的覆盖低的<br>• 默认绑定：全员默认一个规则兜底<br>• 支持批量导入绑定（Excel）</div>'
+    + '<div class="prd-note"><div class="prd-note-title">管理动作</div>• 启用/禁用：禁用前执行<span class="highlight">停用检查</span>，仍有人员绑定时须确认处理<br>• 编辑保存：触发<span class="highlight">变更提示</span>，展示受影响的部门/人员数<br>• 变更历史：详情弹窗保留规则变更记录（操作人/时间/变更内容）</div>',
 
     att_special: '<div class="prd-note"><div class="prd-note-title">模块定位</div>特殊人群管理，为特定员工群体（哺乳/孕期/工伤/残疾/高管/外派等）设置专属打卡规则，系统自动应用差异化考勤策略。</div>'
     + '<div class="prd-note"><div class="prd-note-title">特殊人群类型</div>• <span class="highlight">哺乳</span>：每日额外增加60分钟哺乳假，上班可晚到30分钟，下班可早退30分钟<br>• <span class="highlight">孕期</span>：禁止安排夜班，允许弹性上下班（±1小时），每月可申请2天产检假<br>• <span class="highlight">工伤</span>：工伤期间免打卡，按正常出勤计算，需提供医院证明<br>• <span class="highlight">残疾</span>：可申请远程办公，打卡位置放宽至5公里范围<br>• <span class="highlight">高管</span>：免固定班次考勤，按月提交工作报告即可<br>• <span class="highlight">外派</span>：按当地时区打卡，需绑定GPS定位验证</div>'
@@ -4638,7 +4640,7 @@ function renderPrd() {
 
     att_daily: '<div class="prd-note"><div class="prd-note-title">模块定位</div>每日考勤明细展示，基于打卡数据和班次规则计算每位员工每天的考勤状态。</div>'
     + '<div class="prd-note"><div class="prd-note-title">展示字段</div>工号、姓名、部门、日期、星期、班次、应上下班时间、实际上下班时间、打卡来源、考勤状态、迟到/早退分钟、工时、数据状态</div>'
-    + '<div class="prd-note"><div class="prd-note-title">状态计算规则</div>• <span class="highlight">正常</span>：在弹性范围内打卡<br>• <span class="highlight">迟到</span>：上班打卡晚于规定时间+弹性范围<br>• <span class="highlight">早退</span>：下班打卡早于规定时间-弹性范围<br>• <span class="highlight">旷工</span>：全天无打卡且无请假/出差记录<br>• <span class="highlight">请假/出差/加班/外勤</span>：有对应审批通过的申请</div>'
+    + '<div class="prd-note"><div class="prd-note-title">状态计算规则</div>• <span class="highlight">正常</span>：在班次规则弹性打卡容许范围内打卡<br>• <span class="highlight">迟到</span>：上班打卡晚于规则上班时间+弹性打卡容许<br>• <span class="highlight">早退</span>：下班打卡早于规则下班时间-弹性打卡容许<br>• <span class="highlight">旷工</span>：全天无打卡且无请假/出差记录<br>• <span class="highlight">请假/出差/加班/外勤</span>：有对应审批通过的申请</div>'
     + '<div class="prd-note"><div class="prd-note-title">筛选条件</div>日期、部门、考勤状态、数据状态（系统计算/已修正）</div>',
 
     att_summary: '<div class="prd-note"><div class="prd-note-title">模块定位</div>月度考勤汇总统计，聚合每位员工当月的出勤、迟到、请假、加班等数据，确认后推送至薪酬模块。</div>'
